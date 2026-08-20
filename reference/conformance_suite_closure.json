@@ -1,0 +1,80 @@
+{
+    "version": "nex-protocol-schema-closure-001",
+    "vectors": [
+        {
+            "category": "Consensus",
+            "test_name": "LamportRank_Invalid_Inflation",
+            "description": "Rejects a mutation where LamportRank != 1 + max(P.LamportRank)",
+            "inputs": {
+                "parents_lamport": [
+                    10
+                ],
+                "mutation_lamport": 9999
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "INVALID_LAMPORT_RANK",
+            "should_reject": true
+        },
+        {
+            "category": "CBOR",
+            "test_name": "CausalParents_Lexicographic_Sort",
+            "description": "Validates that CausalParents array must be strictly sorted by HashRef bytes",
+            "inputs": {
+                "parents": [
+                    "hash_b",
+                    "hash_a"
+                ]
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "INVALID_PARENTS",
+            "should_reject": true
+        },
+        {
+            "category": "CBOR",
+            "test_name": "ElementData_Float_Rejection",
+            "description": "Rejects ElementData containing a forbidden floating-point value",
+            "inputs": {
+                "element_data": "fa4048f5c3"
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "INVALID_STATE",
+            "should_reject": true
+        },
+        {
+            "category": "Authority",
+            "test_name": "Capability_Scope_Mismatch",
+            "description": "Rejects mutation if its ObjectID is not in the Capability.Scope array",
+            "inputs": {
+                "mutation_object_id": "hash_x",
+                "capability_scope": [
+                    "hash_y",
+                    "hash_z"
+                ]
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "SCOPE_DENIED",
+            "should_reject": true
+        },
+        {
+            "category": "Authority",
+            "test_name": "Anchor_Equivocation_Untrusted",
+            "description": "Marks authority as UNTRUSTED_EQUIVOCATOR when two different state commitments are signed for the same frontier",
+            "inputs": {
+                "authority_id": "auth_1",
+                "frontier": "front_1",
+                "commitments": [
+                    "c1",
+                    "c2"
+                ]
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "UNTRUSTED_EQUIVOCATOR",
+            "should_reject": false
+        }
+    ]
+}

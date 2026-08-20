@@ -1,0 +1,66 @@
+{
+    "version": "nex-protocol-v0.7",
+    "vectors": [
+        {
+            "category": "Validation",
+            "test_name": "Lamport_Fails_Before_Signature",
+            "description": "A mutation with a valid signature but invalid Lamport math must reject as INVALID_LAMPORT_RANK, saving crypto CPU.",
+            "inputs": {
+                "parents_lamport": [
+                    10
+                ],
+                "mutation_lamport": 9999,
+                "signature_valid": true
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "INVALID_LAMPORT_RANK",
+            "should_reject": true
+        },
+        {
+            "category": "Validation",
+            "test_name": "Missing_Parent_Unresolved",
+            "description": "A mutation referencing an unknown parent halts evaluation as UNRESOLVED, not INVALID.",
+            "inputs": {
+                "parents_present": [
+                    "hash_a"
+                ],
+                "parents_missing": [
+                    "hash_b"
+                ]
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "UNRESOLVED",
+            "should_reject": true
+        },
+        {
+            "category": "Payloads",
+            "test_name": "Resurrection_Missing_Tombstone_Parent",
+            "description": "A Resurrection payload (Type 5) MUST include the preceding Tombstone in its CausalParents.",
+            "inputs": {
+                "mutation_type": 5,
+                "causal_parents": [
+                    "hash_normal_mutation"
+                ]
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "INVALID_PARENTS",
+            "should_reject": true
+        },
+        {
+            "category": "Checkpoints",
+            "test_name": "Checkpoint_Completeness_Mismatch",
+            "description": "A Checkpoint with a real PrunableFrontier but a forged StateCommitment evaluates to INVALID_COMMITMENT.",
+            "inputs": {
+                "frontier_real_state": "hash_true",
+                "checkpoint_state_commitment": "hash_forged"
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "INVALID_COMMITMENT",
+            "should_reject": true
+        }
+    ]
+}

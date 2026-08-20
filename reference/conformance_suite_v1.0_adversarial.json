@@ -1,0 +1,42 @@
+{
+    "version": "nex-protocol-v1.0-adversarial",
+    "description": "Constructed adversarial byte sequences to aggressively test CBOR, COSE, and rejection boundaries.",
+    "vectors": [
+        {
+            "category": "CBOR",
+            "test_name": "Reject_Duplicate_Keys",
+            "description": "CBOR map containing duplicate integer key 1.",
+            "inputs": {
+                "raw_bytes": "a2010a0114"
+            },
+            "expected_error": "INVALID_SCHEMA"
+        },
+        {
+            "category": "CBOR",
+            "test_name": "Reject_Float",
+            "description": "CBOR map containing a floating point value.",
+            "inputs": {
+                "raw_bytes": "a101fa3f800000"
+            },
+            "expected_error": "INVALID_SCHEMA"
+        },
+        {
+            "category": "HashRef",
+            "test_name": "HashRef_Short_Digest",
+            "description": "SHA-256 HashRef with exactly 31 bytes.",
+            "inputs": {
+                "raw_bytes": "8201581f00000000000000000000000000000000000000000000000000000000000000"
+            },
+            "expected_error": "INVALID_HASH_REF"
+        },
+        {
+            "category": "HashRef",
+            "test_name": "HashRef_Unknown_Alg",
+            "description": "HashRef with AlgorithmID 2.",
+            "inputs": {
+                "raw_bytes": "820258200000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "expected_error": "INVALID_HASH_REF"
+        }
+    ]
+}

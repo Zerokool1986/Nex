@@ -1,3 +1,4 @@
+pub mod cbor_strict;
 use std::cmp::Ordering;
 use sha2::{Sha256, Digest};
 

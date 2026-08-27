@@ -46,6 +46,8 @@ pub struct NexUiState {
     pub drive_state: drive::DriveViewState,
     /// Ephemeral view state for People Lens
     pub people_state: people::PeopleViewState,
+    /// Ephemeral view state for Devices Lens
+    pub devices_state: devices::DevicesViewState,
     /// Ephemeral view state for Network Topology canvas
     pub network_state: network::NetworkViewState,
     /// Sovereign Actions & Dialog State
@@ -68,6 +70,7 @@ impl NexUiState {
             maps_state: maps::MapsViewState::new(),
             drive_state: drive::DriveViewState::new(),
             people_state: people::PeopleViewState::new(),
+            devices_state: devices::DevicesViewState::new(),
             network_state: network::NetworkViewState::new(),
             action_state: actions::ActionState::new(),
             command_palette_open: false,

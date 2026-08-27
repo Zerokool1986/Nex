@@ -104,6 +104,7 @@ impl CommandPaletteState {
             ("Topology Radar", "Infrastructure mesh & active conduits", egui_phosphor::regular::GRAPH, NavTab::Network, Some("⌘7")),
             ("Territory Maps", "Geotagged objects & coordinate context", egui_phosphor::regular::MAP_TRIFOLD, NavTab::Maps, Some("⌘8")),
             ("Node Settings", "System preferences & cryptographic authority", egui_phosphor::regular::GEAR_SIX, NavTab::Settings, Some("⌘9")),
+            ("NEX Comms & Chat", "E2EE messaging & physical conduits", egui_phosphor::regular::CHATS_TEARDROP, NavTab::Chat, Some("⌘0")),
         ];
 
         for (title, sub, icon, tab, hotkey) in lenses {

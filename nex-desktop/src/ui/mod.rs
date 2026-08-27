@@ -10,6 +10,7 @@ pub mod inspector;
 pub mod settings;
 pub mod actions;
 pub mod palette_command;
+pub mod chat;
 
 use egui::{Context, SidePanel, TopBottomPanel, CentralPanel, Frame, Color32, Stroke, Vec2, RichText};
 use nex_core::runtime::experience::InterfaceComplexity;
@@ -28,6 +29,8 @@ pub enum NavTab {
     Family,
     Network,
     Settings,
+    Chat,
+    Inspector,
 }
 
 /// Persistent UI state shared across frames
@@ -51,6 +54,8 @@ pub struct NexUiState {
     pub devices_state: devices::DevicesViewState,
     /// Ephemeral view state for Network Topology canvas
     pub network_state: network::NetworkViewState,
+    /// Ephemeral view state for Comms Chat
+    pub chat_state: chat::ChatViewState,
     /// Sovereign Actions & Dialog State
     pub action_state: actions::ActionState,
     /// Global Command Palette / Spotlight Launcher state
@@ -74,6 +79,7 @@ impl NexUiState {
             people_state: people::PeopleViewState::new(),
             devices_state: devices::DevicesViewState::new(),
             network_state: network::NetworkViewState::new(),
+            chat_state: chat::ChatViewState::new(),
             action_state: actions::ActionState::new(),
             command_palette_open: false,
             command_palette_query: String::new(),
@@ -193,6 +199,10 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
             app.ui.active_tab = NavTab::Settings;
             app.ui.status_msg.clear();
         }
+        if i.modifiers.command && i.key_pressed(egui::Key::Num0) {
+            app.ui.active_tab = NavTab::Chat;
+            app.ui.status_msg.clear();
+        }
     });
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -286,6 +296,12 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
 
                             ui.add_space(16.0);
 
+                            // ── COMMS (Sovereign Channels) ──
+                            section_header(ui, "COMMS");
+                            nav_item(ui, app, NavTab::Chat,     egui_phosphor::regular::CHATS_TEARDROP, "Chat", "⌘0");
+
+                            ui.add_space(16.0);
+
                             // ── LENSES (Projections of DAG) ──
                             section_header(ui, "LENSES");
                             nav_item(ui, app, NavTab::Photos,   egui_phosphor::regular::IMAGE, "Photos", "⌘3");
@@ -346,16 +362,18 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
 
                         ui.vertical(|ui| {
                             match app.ui.active_tab {
-                                NavTab::Home     => home::render(ui, app),
-                                NavTab::Photos   => photos::render(ui, app),
-                                NavTab::Media    => media::render(ui, app),
-                                NavTab::Maps     => maps::render(ui, app),
-                                NavTab::Drive    => drive::render(ui, app),
-                                NavTab::People   => people::render(ui, app),
-                                NavTab::Devices  => devices::render(ui, app),
-                                NavTab::Family   => home::render_family(ui, app),
-                                NavTab::Network  => network::render(ui, app),
-                                NavTab::Settings => settings::render(ui, app),
+                                NavTab::Home      => home::render(ui, app),
+                                NavTab::Photos    => photos::render(ui, app),
+                                NavTab::Media     => media::render(ui, app),
+                                NavTab::Maps      => maps::render(ui, app),
+                                NavTab::Drive     => drive::render(ui, app),
+                                NavTab::People    => people::render(ui, app),
+                                NavTab::Devices   => devices::render(ui, app),
+                                NavTab::Family    => home::render_family(ui, app),
+                                NavTab::Network   => network::render(ui, app),
+                                NavTab::Settings  => settings::render(ui, app),
+                                NavTab::Chat      => chat::render(ui, app),
+                                NavTab::Inspector => inspector::render(ui, app),
                             }
 
                             // Trigger action modal dialogs (Import, Export, Proximity SAS Verification)

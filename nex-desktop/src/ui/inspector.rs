@@ -18,6 +18,15 @@ pub enum SelectedEntity {
     Location(ObjectID),
 }
 
+pub fn render(ui: &mut Ui, app: &mut NexDesktopApp) {
+    if app.ui.selected_entity.is_none() {
+        if let Some(&first_obj_id) = app.node.state.object_store.keys().next() {
+            app.ui.selected_entity = Some(SelectedEntity::Object(first_obj_id));
+        }
+    }
+    render_inspector_panel(ui, app);
+}
+
 pub fn render_inspector_panel(ui: &mut Ui, app: &mut NexDesktopApp) {
     let entity = match app.ui.selected_entity.clone() {
         Some(e) => e,

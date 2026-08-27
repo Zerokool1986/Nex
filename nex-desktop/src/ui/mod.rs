@@ -277,41 +277,38 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
                             nav_item(ui, app, NavTab::Devices,  egui_phosphor::regular::DESKTOP_TOWER, "Devices", "");
                             nav_item(ui, app, NavTab::Network,  egui_phosphor::regular::GRAPH, "Topology", "");
 
-                            // Bottom-anchored utility dock
-                            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                                ui.add_space(4.0);
+                            // ── BOTTOM DOCK: SETTINGS & COMPLEXITY ──
+                            ui.add_space(18.0);
+                            ui.add(egui::Separator::default().spacing(1.0));
+                            ui.add_space(10.0);
 
-                                // Progressive Disclosure Experience Slider
-                                ui.horizontal(|ui| {
-                                    let tiers = [
-                                        (InterfaceComplexity::Simple, "Simple"),
-                                        (InterfaceComplexity::Standard, "Standard"),
-                                        (InterfaceComplexity::Advanced, "Adv"),
-                                        (InterfaceComplexity::Expert, "Operator"),
-                                    ];
-                                    for (tier, label) in tiers {
-                                        let is_active = app.ui.complexity == tier;
-                                        let text_color = if is_active { palette::TEXT } else { palette::TEXT_DIM };
-                                        let bg = if is_active { palette::SELECTED } else { Color32::TRANSPARENT };
-                                        let stroke = if is_active { Stroke::new(1.0_f32, palette::ACCENT) } else { Stroke::NONE };
-                                        if ui.add(
-                                            egui::Button::new(RichText::new(label).size(10.5).color(text_color))
-                                                .fill(bg)
-                                                .stroke(stroke)
-                                                .corner_radius(4.0)
-                                                .min_size(Vec2::new(36.0, 22.0))
-                                        ).clicked() {
-                                            app.ui.complexity = tier;
-                                        }
+                            // Settings link
+                            nav_item(ui, app, NavTab::Settings, egui_phosphor::regular::GEAR_SIX, "Node Settings", "");
+                            ui.add_space(10.0);
+
+                            // Progressive Disclosure Experience Slider
+                            ui.horizontal(|ui| {
+                                let tiers = [
+                                    (InterfaceComplexity::Simple, "Simple"),
+                                    (InterfaceComplexity::Standard, "Standard"),
+                                    (InterfaceComplexity::Advanced, "Adv"),
+                                    (InterfaceComplexity::Expert, "Op"),
+                                ];
+                                for (tier, label) in tiers {
+                                    let is_active = app.ui.complexity == tier;
+                                    let text_color = if is_active { palette::TEXT } else { palette::TEXT_DIM };
+                                    let bg = if is_active { palette::SELECTED } else { Color32::TRANSPARENT };
+                                    let stroke = if is_active { Stroke::new(1.0_f32, palette::ACCENT) } else { Stroke::NONE };
+                                    if ui.add(
+                                        egui::Button::new(RichText::new(label).size(10.5).color(text_color))
+                                            .fill(bg)
+                                            .stroke(stroke)
+                                            .corner_radius(4.0)
+                                            .min_size(Vec2::new(38.0, 24.0))
+                                    ).clicked() {
+                                        app.ui.complexity = tier;
                                     }
-                                });
-                                ui.add_space(6.0);
-
-                                // Settings link
-                                nav_item(ui, app, NavTab::Settings, egui_phosphor::regular::GEAR_SIX, "Node Settings", "");
-
-                                ui.add_space(6.0);
-                                ui.add(egui::Separator::default().spacing(1.0));
+                                }
                             });
                         });
                     });

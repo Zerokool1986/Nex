@@ -1,0 +1,4 @@
+{
+  "summary": "Hardened FragmentationReassembler with stream capacity bounds and TTL pruning to prevent memory exhaustion DoS.",
+  "updatedAt": "2026-08-20T22:09:19.275756300Z"
+}

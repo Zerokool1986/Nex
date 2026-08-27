@@ -39,8 +39,10 @@ class NexNormativeModel:
         return NexNormativeModel.nex_cbor_encode([alg_id, digest])
 
     @staticmethod
-    def construct_genesis_descriptor(obj_type: int, domain: str, version: int, root_key: bytes = None) -> dict:
-        desc = {1: obj_type, 3: domain, 4: version}
+    def construct_genesis_descriptor(obj_type: int, domain: str, version: int, root_key: bytes = None, creator_nonce: bytes = None) -> dict:
+        if creator_nonce is None or len(creator_nonce) < 16 or len(creator_nonce) > 32:
+            raise ValueError("INVALID_SCHEMA: CreatorNonce must be 16-32 bytes.")
+        desc = {1: obj_type, 3: domain, 4: version, 5: creator_nonce}
         if obj_type == 1:
             if root_key is None or len(root_key) != 32:
                 raise ValueError("INVALID_SCHEMA")
@@ -74,7 +76,8 @@ if __name__ == "__main__":
     
     # 1. Strict Genesis Descriptor & ObjectID
     root_key = b'\x00'*32
-    desc = NexNormativeModel.construct_genesis_descriptor(1, "NEX", 1, root_key)
+    nonce = b'\xAA'*16
+    desc = NexNormativeModel.construct_genesis_descriptor(1, "NEX", 1, root_key, nonce)
     obj_id = NexNormativeModel.derive_object_id(desc)
     print(f"Constructed ObjectID (Identity): {obj_id.hex()}")
     

@@ -1,0 +1,4 @@
+{
+  "summary": "Implement pointer-tracking registry in c_abi.rs to guarantee true double-free immunity without undefined behavior.",
+  "updatedAt": "2026-08-22T03:15:49.119724700Z"
+}

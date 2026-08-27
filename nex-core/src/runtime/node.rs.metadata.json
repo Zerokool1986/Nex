@@ -1,0 +1,4 @@
+{
+  "summary": "Defer WAL open in NexNode until after recover and auto-truncation in runtime/node.rs.",
+  "updatedAt": "2026-08-21T05:27:55.768472100Z"
+}

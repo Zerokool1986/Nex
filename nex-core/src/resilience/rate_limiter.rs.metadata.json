@@ -1,0 +1,4 @@
+{
+  "summary": "Implements TokenBucket and PeerRateLimiter for ingress traffic policing.",
+  "updatedAt": "2026-08-20T21:14:54.451734300Z"
+}

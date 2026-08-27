@@ -1,0 +1,53 @@
+{
+  "$schema": "https://nex.org/schemas/conformance_v1.json",
+  "version": "1.0.0",
+  "description": "Language-independent golden conformance vectors for NEX protocol verification",
+  "identity_vectors": [
+    {
+      "description": "Ed25519 ActorID derivation from 32-byte zero key",
+      "key_type": 1,
+      "public_key_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "domain_separator": "NEX/ACTOR_ID/v1",
+      "expected_actor_id_hex": "9d50c55ff65bc0e5840876ab58de6649aedc3be2db4b532ef4c2f295b37c5337"
+    },
+    {
+      "description": "Ed25519 ActorID derivation from incremental key",
+      "key_type": 1,
+      "public_key_hex": "0101010101010101010101010101010101010101010101010101010101010101",
+      "domain_separator": "NEX/ACTOR_ID/v1",
+      "expected_actor_id_hex": "620d94956dc667857716cff32393daabbd96481b550ba92b0900d86a68792590"
+    }
+  ],
+  "wire_frame_vectors": [
+    {
+      "description": "13-byte wire frame for 4-byte payload 0x01020304 over QUIC (0x02)",
+      "transport_tag": 2,
+      "flags": 0,
+      "payload_hex": "01020304",
+      "expected_frame_hex": "4e5800020000000004b63cfbcd01020304",
+      "expected_crc32_hex": "b63cfbcd"
+    },
+    {
+      "description": "13-byte wire frame for empty payload over Mesh (0x01)",
+      "transport_tag": 1,
+      "flags": 0,
+      "payload_hex": "",
+      "expected_frame_hex": "4e580001000000000000000000",
+      "expected_crc32_hex": "00000000"
+    }
+  ],
+  "smt_key_vectors": [
+    {
+      "description": "SMT Key hash for MutationID 0x00..00",
+      "mutation_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "domain_separator": "NEX/SMT_KEY/v1",
+      "expected_smt_key_hex": "ee5648461142eeafe3c5981a8b63544025cea42dec7de199a727f9f5baefc1cf"
+    }
+  ],
+  "wal_record_vectors": [
+    {
+      "description": "WAL file header (8 Bytes)",
+      "expected_header_hex": "4e45585701000000"
+    }
+  ]
+}

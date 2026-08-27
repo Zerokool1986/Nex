@@ -1,0 +1,4 @@
+{
+  "summary": "Create sync/outbox.rs implementing durable OfflineOutboxStore with retry idempotence and WAL recovery.",
+  "updatedAt": "2026-08-23T01:50:46.416394200Z"
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Update wal.rs with torn tail auto-truncation on recovery.",
+  "updatedAt": "2026-08-21T05:26:47.108356800Z"
+}

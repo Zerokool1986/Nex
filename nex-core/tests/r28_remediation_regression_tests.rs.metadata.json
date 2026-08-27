@@ -1,0 +1,4 @@
+{
+  "summary": "R28 Remediation Regression Test Suite verifying iterative dependency releasing on 1,000-deep cascades, in-flight stream clamping/TTL reaping, and dual-tier ingress policing.",
+  "updatedAt": "2026-08-20T22:09:31.414746100Z"
+}

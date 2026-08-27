@@ -1,0 +1,4 @@
+{
+  "summary": "Fix u8 overflow in random coefficients generation for tests/r71_16_social_recovery_ceremony_and_timelock_tests.rs.",
+  "updatedAt": "2026-08-22T23:28:33.683077400Z"
+}

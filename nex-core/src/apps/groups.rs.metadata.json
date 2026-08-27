@@ -1,0 +1,4 @@
+{
+  "summary": "Use string keys in GroupState members map to ensure valid JSON serialization.",
+  "updatedAt": "2026-08-22T04:26:29.655604400Z"
+}

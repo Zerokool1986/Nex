@@ -1,0 +1,4 @@
+{
+  "summary": "Fix verify_capability_chain call in product/ingest.rs",
+  "updatedAt": "2026-08-23T08:42:54.304563500Z"
+}

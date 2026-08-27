@@ -1,0 +1,4 @@
+{
+  "summary": "Implements RoutingTable with multi-metric path selection, sequence monotonicity, topic indexing, and route expiration.",
+  "updatedAt": "2026-08-20T21:12:24.118244100Z"
+}

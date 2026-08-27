@@ -4,6 +4,7 @@ use crate::model::{Mutation, MutationID, CrdtPayload};
 use crate::hash::hash_mutation_body;
 use crate::runtime::node::NexNode;
 use crate::object::types::{ObjectType, NexObject};
+use crate::sync::types::IngressDisposition;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SyncAdvertise {
@@ -159,32 +160,55 @@ impl AntiEntropyEngine {
                 node.state.state_node.ingest_mutation(m.clone());
                 node.state.latest_mutation_id = Some(m.id);
 
-                match &m.body.payload {
-                    CrdtPayload::AddLWW { id, value } => {
-                        if let Some(obj) = node.state.object_store.get_mut(id) {
-                            obj.payload_bytes = value.clone();
-                        } else {
-                            let obj = NexObject {
-                                object_id: *id,
-                                object_type: ObjectType::Synthetic(1),
-                                namespace: [0u8; 32],
-                                owner_actor_id: m.body.author,
-                                schema_version: 1,
-                                created_epoch: m.body.epoch,
-                                created_lamport: m.body.lamport,
-                                metadata: BTreeMap::new(),
-                                payload_bytes: value.clone(),
-                                tombstoned: false,
-                            };
-                            node.state.object_store.insert(*id, obj);
+                // Derive object_store directly from crdt_state winners
+                for (_obj_id, (_opt_val, epoch, lamport, winning_id)) in &node.state.state_node.crdt_state {
+                    if let Some(winning_mutation) = node.state.state_node.dag.get(winning_id) {
+                        match &winning_mutation.body.payload {
+                            CrdtPayload::AddLWW { id, value } => {
+                                if let Some(obj) = node.state.object_store.get_mut(id) {
+                                    obj.payload_bytes = value.clone();
+                                    obj.created_epoch = *epoch;
+                                    obj.created_lamport = *lamport;
+                                    obj.tombstoned = false;
+                                } else {
+                                    let obj = NexObject {
+                                        object_id: *id,
+                                        object_type: ObjectType::Synthetic(1),
+                                        namespace: [0u8; 32],
+                                        owner_actor_id: winning_mutation.body.author,
+                                        schema_version: 1,
+                                        created_epoch: *epoch,
+                                        created_lamport: *lamport,
+                                        metadata: BTreeMap::new(),
+                                        payload_bytes: value.clone(),
+                                        tombstoned: false,
+                                    };
+                                    node.state.object_store.insert(*id, obj);
+                                }
+                            }
+                            CrdtPayload::Tombstone { id } | CrdtPayload::RemoveLWW { id } => {
+                                if let Some(obj) = node.state.object_store.get_mut(id) {
+                                    obj.tombstoned = true;
+                                    obj.created_epoch = *epoch;
+                                    obj.created_lamport = *lamport;
+                                } else {
+                                    let obj = NexObject {
+                                        object_id: *id,
+                                        object_type: ObjectType::Synthetic(1),
+                                        namespace: [0u8; 32],
+                                        owner_actor_id: winning_mutation.body.author,
+                                        schema_version: 1,
+                                        created_epoch: *epoch,
+                                        created_lamport: *lamport,
+                                        metadata: BTreeMap::new(),
+                                        payload_bytes: Vec::new(),
+                                        tombstoned: true,
+                                    };
+                                    node.state.object_store.insert(*id, obj);
+                                }
+                            }
                         }
                     }
-                    CrdtPayload::Tombstone { id } => {
-                        if let Some(obj) = node.state.object_store.get_mut(id) {
-                            obj.tombstoned = true;
-                        }
-                    }
-                    _ => {}
                 }
                 ingested += 1;
             }

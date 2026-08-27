@@ -9,6 +9,7 @@ pub mod network;
 pub mod inspector;
 pub mod settings;
 pub mod actions;
+pub mod palette_command;
 
 use egui::{Context, SidePanel, TopBottomPanel, CentralPanel, Frame, Color32, Stroke, Vec2, RichText};
 use nex_core::runtime::experience::InterfaceComplexity;
@@ -55,6 +56,7 @@ pub struct NexUiState {
     /// Global Command Palette / Spotlight Launcher state
     pub command_palette_open: bool,
     pub command_palette_query: String,
+    pub command_palette_state: palette_command::CommandPaletteState,
     /// Keyboard traversal index for Home feed
     pub home_selected_index: Option<usize>,
 }
@@ -75,6 +77,7 @@ impl NexUiState {
             action_state: actions::ActionState::new(),
             command_palette_open: false,
             command_palette_query: String::new(),
+            command_palette_state: palette_command::CommandPaletteState::new(),
             home_selected_index: None,
         }
     }
@@ -151,7 +154,7 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
         if i.modifiers.command && i.key_pressed(egui::Key::K) {
             app.ui.command_palette_open = !app.ui.command_palette_open;
             if app.ui.command_palette_open {
-                app.ui.command_palette_query.clear();
+                app.ui.command_palette_state.reset();
             }
         }
         if i.modifiers.command && i.key_pressed(egui::Key::Num1) {
@@ -168,6 +171,26 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
         }
         if i.modifiers.command && i.key_pressed(egui::Key::Num4) {
             app.ui.active_tab = NavTab::Drive;
+            app.ui.status_msg.clear();
+        }
+        if i.modifiers.command && i.key_pressed(egui::Key::Num5) {
+            app.ui.active_tab = NavTab::People;
+            app.ui.status_msg.clear();
+        }
+        if i.modifiers.command && i.key_pressed(egui::Key::Num6) {
+            app.ui.active_tab = NavTab::Devices;
+            app.ui.status_msg.clear();
+        }
+        if i.modifiers.command && i.key_pressed(egui::Key::Num7) {
+            app.ui.active_tab = NavTab::Network;
+            app.ui.status_msg.clear();
+        }
+        if i.modifiers.command && i.key_pressed(egui::Key::Num8) {
+            app.ui.active_tab = NavTab::Maps;
+            app.ui.status_msg.clear();
+        }
+        if i.modifiers.command && i.key_pressed(egui::Key::Num9) {
+            app.ui.active_tab = NavTab::Settings;
             app.ui.status_msg.clear();
         }
     });
@@ -343,7 +366,9 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
         });
 
     // Global Command Palette / Spotlight Launcher Modal
-    render_command_palette(ctx, app);
+    let mut palette_state = app.ui.command_palette_state.clone();
+    palette_command::render_command_palette(ctx, app, &mut palette_state);
+    app.ui.command_palette_state = palette_state;
 }
 
 fn section_header(ui: &mut egui::Ui, label: &str) {
@@ -353,182 +378,6 @@ fn section_header(ui: &mut egui::Ui, label: &str) {
         .strong()
     );
     ui.add_space(3.0);
-}
-
-fn render_command_palette(ctx: &Context, app: &mut NexDesktopApp) {
-    if !app.ui.command_palette_open {
-        return;
-    }
-
-    // Backdrop
-    egui::Area::new(egui::Id::new("palette_backdrop"))
-        .fixed_pos(egui::Pos2::ZERO)
-        .order(egui::Order::Background)
-        .show(ctx, |ui| {
-            let screen = ctx.screen_rect();
-            ui.allocate_exact_size(screen.size(), egui::Sense::click());
-        });
-
-    egui::Window::new("Sovereign Command Palette")
-        .collapsible(false)
-        .resizable(false)
-        .title_bar(false)
-        .anchor(egui::Align2::CENTER_TOP, Vec2::new(0.0, 75.0))
-        .frame(Frame::new()
-            .fill(Color32::from_rgb(18, 19, 26))
-            .corner_radius(12.0)
-            .inner_margin(18.0)
-            .stroke(Stroke::new(1.0_f32, palette::ACCENT))
-            .shadow(egui::Shadow {
-                offset: [0, 10],
-                blur: 28,
-                spread: 4,
-                color: Color32::from_black_alpha(150),
-            })
-        )
-        .show(ctx, |ui| {
-            ui.set_width(540.0);
-
-            // Search Bar Input
-            ui.horizontal(|ui| {
-                ui.label(RichText::new(egui_phosphor::regular::MAGNIFYING_GLASS).size(20.0).color(palette::ACCENT));
-                ui.add_space(6.0);
-                let response = ui.add(egui::TextEdit::singleline(&mut app.ui.command_palette_query)
-                    .hint_text("Type a command, space, lens, person, or file…")
-                    .desired_width(470.0)
-                    .text_color(palette::TEXT)
-                    .font(egui::FontId::proportional(14.5)));
-                response.request_focus();
-                if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-                    app.ui.command_palette_open = false;
-                }
-            });
-
-            ui.add_space(10.0);
-            ui.add(egui::Separator::default().spacing(1.0));
-            ui.add_space(8.0);
-
-            let query = app.ui.command_palette_query.to_lowercase();
-            let mut matched = 0;
-
-            // 1. Actions
-            let actions = [
-                ("Import File into Personal", egui_phosphor::regular::PLUS, "Personal", "Add files to private local storage"),
-                ("Place File in Family Space", egui_phosphor::regular::PLUS, "Family", "Share document with family circle"),
-                ("Pair Family Member via SAS QR", egui_phosphor::regular::QR_CODE, "Family", "Secure proximity pairing ceremony"),
-                ("Backup 12-Word Master Seed", egui_phosphor::regular::KEY, "Security", "Export sovereign root keys"),
-                ("Clean CAS Storage (GC)", egui_phosphor::regular::BROOM, "Storage", "Prune unreferenced chunks"),
-            ];
-
-            for (name, icon, cat, desc) in actions {
-                if query.is_empty() || name.to_lowercase().contains(&query) || desc.to_lowercase().contains(&query) {
-                    let response = ui.add_sized(
-                        Vec2::new(ui.available_width(), 36.0),
-                        egui::Button::new(
-                            RichText::new(format!("{}   {}", icon, name)).size(13.5).color(palette::TEXT)
-                        )
-                        .fill(Color32::TRANSPARENT)
-                        .corner_radius(6.0),
-                    );
-                    let badge_rect = response.rect;
-                    ui.painter().text(
-                        egui::Pos2::new(badge_rect.right() - 10.0, badge_rect.center().y),
-                        egui::Align2::RIGHT_CENTER,
-                        cat,
-                        egui::FontId::proportional(11.0),
-                        palette::ACCENT,
-                    );
-                    if response.clicked() {
-                        if name.contains("Personal") || name.contains("Family Space") {
-                            app.ui.active_tab = NavTab::Drive;
-                        } else if name.contains("Pair") {
-                            app.ui.action_state.active_dialog = Some(crate::ui::actions::ActionDialog::ProximitySasVerification {
-                                peer_name: "Amy's Pixel 9".to_string(),
-                                actor_id: [0x55; 32],
-                                safety_words: [
-                                    "RIVER".to_string(),
-                                    "SUMMIT".to_string(),
-                                    "FALCON".to_string(),
-                                    "HARBOR".to_string(),
-                                ],
-                            });
-                        } else {
-                            app.ui.active_tab = NavTab::Settings;
-                        }
-                        app.ui.command_palette_open = false;
-                    }
-                    matched += 1;
-                    if matched >= 5 { break; }
-                }
-            }
-
-            // 2. Navigation
-            let nav_targets = [
-                ("Personal Sanctuary", NavTab::Home, egui_phosphor::regular::HOUSE_SIMPLE, "Space"),
-                ("Family Space", NavTab::Family, egui_phosphor::regular::USERS_THREE, "Space"),
-                ("Photos Lens", NavTab::Photos, egui_phosphor::regular::IMAGE, "Lens"),
-                ("Files (Drive)", NavTab::Drive, egui_phosphor::regular::FOLDER_SIMPLE, "Lens"),
-                ("Media Stream", NavTab::Media, egui_phosphor::regular::PLAY_CIRCLE, "Lens"),
-                ("Maps & Geotags", NavTab::Maps, egui_phosphor::regular::MAP_TRIFOLD, "Lens"),
-                ("People & Access", NavTab::People, egui_phosphor::regular::IDENTIFICATION_CARD, "Mesh"),
-                ("Hardware Nodes", NavTab::Devices, egui_phosphor::regular::DESKTOP_TOWER, "Mesh"),
-                ("Topology Radar", NavTab::Network, egui_phosphor::regular::GRAPH, "Mesh"),
-                ("Node Settings", NavTab::Settings, egui_phosphor::regular::GEAR_SIX, "System"),
-            ];
-
-            for (name, tab, icon, category) in nav_targets {
-                if query.is_empty() || name.to_lowercase().contains(&query) {
-                    let response = ui.add_sized(
-                        Vec2::new(ui.available_width(), 32.0),
-                        egui::Button::new(
-                            RichText::new(format!("{}   {}", icon, name)).size(13.0).color(palette::TEXT_SECONDARY)
-                        )
-                        .fill(Color32::TRANSPARENT)
-                        .corner_radius(6.0),
-                    );
-                    let badge_rect = response.rect;
-                    ui.painter().text(
-                        egui::Pos2::new(badge_rect.right() - 10.0, badge_rect.center().y),
-                        egui::Align2::RIGHT_CENTER,
-                        category,
-                        egui::FontId::proportional(10.5),
-                        palette::TEXT_DIM,
-                    );
-                    if response.clicked() {
-                        app.ui.active_tab = tab;
-                        app.ui.command_palette_open = false;
-                    }
-                    matched += 1;
-                    if matched >= 9 { break; }
-                }
-            }
-
-            // 3. Quick Objects
-            for (obj_id, obj) in &app.node.state.object_store {
-                if obj.tombstoned { continue; }
-                let title = obj.metadata.get("title").or_else(|| obj.metadata.get("filename")).cloned().unwrap_or_else(|| "Untitled".to_string());
-                if !query.is_empty() && title.to_lowercase().contains(&query) {
-                    if ui.add_sized(
-                        Vec2::new(ui.available_width(), 30.0),
-                        egui::Button::new(
-                            RichText::new(format!("{}   {}", egui_phosphor::regular::FILE_TEXT, title)).size(12.5).color(palette::ACCENT)
-                        )
-                        .fill(Color32::TRANSPARENT)
-                        .corner_radius(6.0),
-                    ).clicked() {
-                        app.ui.selected_entity = Some(inspector::SelectedEntity::Object(*obj_id));
-                        app.ui.command_palette_open = false;
-                    }
-                    matched += 1;
-                    if matched >= 12 { break; }
-                }
-            }
-
-            ui.add_space(8.0);
-            ui.horizontal(|ui| {
-                ui.label(RichText::new("↵ Execute / Navigate   •   ESC Dismiss   •   Type to filter").size(11.0).color(palette::TEXT_DIM));
-            });
-        });
 }
 
 fn nav_item(ui: &mut egui::Ui, app: &mut NexDesktopApp, tab: NavTab, icon: &str, label: &str, shortcut: &str) {

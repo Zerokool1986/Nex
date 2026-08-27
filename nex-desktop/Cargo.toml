@@ -24,3 +24,5 @@ sha2 = "0.10"
 egui-phosphor = "0.9.0"
 egui_extras = { version = "0.31", features = ["image"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
+tempfile = "3.8"
+

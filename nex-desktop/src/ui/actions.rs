@@ -291,41 +291,59 @@ pub fn render_action_dialog(ui: &mut Ui, app: &mut NexDesktopApp) {
                         app.ui.action_state.active_dialog = None;
                     }
                 }
-                ActionDialog::ProximitySasVerification { peer_name, actor_id, safety_words } => {
-                    ui.heading(RichText::new("🛡️ Verify Sovereign Contact (SAS)").size(16.0).strong().color(palette::ACCENT));
-                    ui.add_space(8.0);
-                    ui.label(RichText::new(format!("Peer Contact: {}", peer_name)).strong().size(13.5).color(palette::TEXT));
-                    ui.label(RichText::new(format!("Actor ID: {}", hex::encode(&actor_id[0..6]))).size(11.5).color(palette::TEXT_DIM));
-                    ui.add_space(8.0);
+                ActionDialog::ProximitySasVerification { peer_name, actor_id: _, safety_words } => {
+                    ui.vertical_centered(|ui| {
+                        ui.label(RichText::new("🤝 In-Person Trust Ceremony").size(18.0).strong().color(palette::TEXT));
+                        ui.add_space(4.0);
+                        ui.label(RichText::new(format!("Establishing direct cryptographic trust with {}", peer_name))
+                            .size(13.0).color(palette::TEXT_SECONDARY));
+                        ui.add_space(16.0);
 
-                    ui.label(RichText::new("Compare these 4 safety words with the person or device in person:").size(12.5).color(palette::TEXT));
-                    ui.add_space(6.0);
+                        ui.label(RichText::new("Compare these four safety words with their screen:")
+                            .size(13.0).color(palette::TEXT));
+                        ui.add_space(10.0);
 
-                    Frame::new().fill(Color32::from_rgb(14, 18, 26)).corner_radius(6.0).inner_margin(10.0).show(ui, |ui| {
+                        // 4 Large Word Badges
                         ui.horizontal(|ui| {
                             for word in safety_words.iter() {
-                                ui.label(RichText::new(word).strong().size(13.0).color(palette::ACCENT_GREEN));
-                                ui.label(RichText::new("•").size(12.0).color(palette::TEXT_DIM));
+                                Frame::new()
+                                    .fill(Color32::from_rgb(18, 22, 32))
+                                    .corner_radius(8.0)
+                                    .inner_margin(egui::Margin::symmetric(14, 10))
+                                    .stroke(Stroke::new(1.0_f32, palette::ACCENT))
+                                    .show(ui, |ui| {
+                                        ui.label(RichText::new(word).size(15.0).strong().color(palette::ACCENT_GREEN));
+                                    });
+                                ui.add_space(6.0);
                             }
                         });
-                    });
-                    ui.add_space(12.0);
 
-                    ui.horizontal(|ui| {
-                        if ui.button("Words Do Not Match").clicked() {
-                            app.ui.action_state.active_dialog = None;
-                        }
-                        if ui.button(RichText::new("✅ Confirm & Trust Contact").strong().color(palette::ACCENT_GREEN)).clicked() {
-                            app.ui.action_state.active_dialog = None;
-                            app.ui.action_state.last_result = Some(ActionResult {
-                                object_id: [0u8; 32],
-                                status: ActionStatus::Success,
-                                canonical_epoch: app.node.state.current_epoch,
-                                canonical_lamport: 0,
-                                persisted: true,
-                                message: format!("Trust verified for {} via 4-word SAS ceremony.", peer_name),
-                            });
-                        }
+                        ui.add_space(16.0);
+                        ui.label(RichText::new("Both devices confirm identical cryptographic keys with zero third parties.")
+                            .size(11.5).color(palette::TEXT_DIM));
+                        ui.add_space(18.0);
+
+                        ui.horizontal(|ui| {
+                            if ui.button(RichText::new("Words Do Not Match (Cancel)").size(12.5).color(palette::TEXT_SECONDARY)).clicked() {
+                                app.ui.action_state.active_dialog = None;
+                            }
+                            ui.add_space(12.0);
+                            if ui.add(
+                                egui::Button::new(RichText::new("✓ Words Match — Establish Trust").size(13.0).strong().color(palette::TEXT))
+                                    .fill(palette::ACCENT_GREEN)
+                                    .corner_radius(6.0)
+                            ).clicked() {
+                                app.ui.action_state.active_dialog = None;
+                                app.ui.action_state.last_result = Some(ActionResult {
+                                    object_id: [0u8; 32],
+                                    status: ActionStatus::Success,
+                                    canonical_epoch: app.node.state.current_epoch,
+                                    canonical_lamport: 0,
+                                    persisted: true,
+                                    message: format!("Direct trust verified for {} via 4-word SAS ceremony.", peer_name),
+                                });
+                            }
+                        });
                     });
                 }
             }

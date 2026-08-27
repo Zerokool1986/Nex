@@ -117,10 +117,12 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
     visuals.panel_fill = palette::BG;
     visuals.window_fill = palette::BG;
     visuals.extreme_bg_color = palette::SIDEBAR;
+    visuals.faint_bg_color = palette::PANEL;
+    visuals.code_bg_color = palette::CARD;
+    visuals.widgets.noninteractive.bg_fill = palette::BG;
     visuals.widgets.inactive.bg_fill = palette::PANEL;
     visuals.widgets.hovered.bg_fill = palette::PANEL_HOVER;
     visuals.widgets.active.bg_fill = palette::ACCENT;
-    visuals.widgets.noninteractive.bg_fill = palette::PANEL;
     visuals.widgets.inactive.corner_radius = egui::CornerRadius::same(8);
     visuals.widgets.hovered.corner_radius = egui::CornerRadius::same(8);
     visuals.widgets.active.corner_radius = egui::CornerRadius::same(8);
@@ -173,9 +175,9 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // LEFT NAVIGATION COLUMN — Identity-anchored, spatial hierarchy
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    SidePanel::left("sidebar")
+    SidePanel::left(egui::Id::new("nex_sidebar_nav_v3"))
         .resizable(false)
-        .exact_width(224.0)
+        .exact_width(220.0)
         .frame(Frame::new()
             .fill(palette::SIDEBAR)
             .inner_margin(egui::Margin { left: 16, right: 16, top: 20, bottom: 16 })
@@ -285,7 +287,7 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // BOTTOM UTILITY DOCK — Clean keyboard helper & quick status
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    TopBottomPanel::bottom("status_bar")
+    TopBottomPanel::bottom(egui::Id::new("nex_status_bar_v3"))
         .frame(Frame::new()
             .fill(palette::SIDEBAR)
             .inner_margin(egui::Margin { left: 18, right: 18, top: 7, bottom: 7 })

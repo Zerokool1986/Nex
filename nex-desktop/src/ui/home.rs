@@ -18,12 +18,12 @@ pub fn render(ui: &mut Ui, app: &mut NexDesktopApp) {
         ui.vertical(|ui| {
             ui.label(RichText::new("Personal Sanctuary").size(28.0).strong().color(palette::TEXT));
             ui.add_space(2.0);
-            ui.label(RichText::new("🔒 Private — only accessible by your cryptographic keys on this device")
+            ui.label(RichText::new("🔒 Private — Authorized exclusively by local root cryptographic key")
                 .size(13.0).color(palette::TEXT_SECONDARY));
         });
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button(RichText::new(format!("{} Inspect Space", egui_phosphor::regular::MAGNIFYING_GLASS)).size(12.5).color(palette::TEXT_SECONDARY))
+            if ui.button(RichText::new(format!("{} Inspect Space", egui_phosphor::regular::SHIELD_CHECK)).size(12.5).color(palette::TEXT_SECONDARY))
                 .clicked()
             {
                 app.ui.selected_entity = Some(SelectedEntity::Space(SpaceType::Personal));
@@ -222,23 +222,23 @@ fn render_telemetry_beacon(ui: &mut Ui, app: &NexDesktopApp, vm: &nex_core::runt
         .inner_margin(egui::Margin::symmetric(14, 8))
         .stroke(Stroke::new(1.0_f32, palette::GLASS_BORDER))
         .show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(RichText::new(format!("{} {}", sync_icon, sync_text)).size(12.0).color(sync_color));
+            ui.horizontal_wrapped(|ui| {
+                ui.label(RichText::new(format!("{} {}", sync_icon, sync_text)).size(11.5).color(sync_color));
 
-                ui.add_space(12.0);
+                ui.add_space(10.0);
                 ui.label(RichText::new("•").size(11.0).color(palette::TEXT_DIM));
-                ui.add_space(12.0);
+                ui.add_space(10.0);
 
                 ui.label(RichText::new(format!("{} {}", egui_phosphor::regular::DATABASE, &vm.storage_health_label))
-                    .size(12.0).color(palette::TEXT_SECONDARY));
+                    .size(11.5).color(palette::TEXT_SECONDARY));
 
                 if app.ui.complexity != nex_core::runtime::experience::InterfaceComplexity::Simple {
-                    ui.add_space(12.0);
+                    ui.add_space(10.0);
                     ui.label(RichText::new("•").size(11.0).color(palette::TEXT_DIM));
-                    ui.add_space(12.0);
+                    ui.add_space(10.0);
 
                     ui.label(RichText::new(format!("{} {}", egui_phosphor::regular::FINGERPRINT, &vm.identity_protection_label))
-                        .size(12.0).color(palette::TEXT_SECONDARY));
+                        .size(11.5).color(palette::TEXT_SECONDARY));
                 }
             });
         });
@@ -246,35 +246,37 @@ fn render_telemetry_beacon(ui: &mut Ui, app: &NexDesktopApp, vm: &nex_core::runt
 
 /// Personal Empty State
 fn render_personal_empty_state(ui: &mut Ui, app: &mut NexDesktopApp) {
-    let card_width = ui.available_width().min(640.0);
+    let card_width = ui.available_width().min(720.0);
 
-    ui.vertical_centered(|ui| {
-        ui.add_space(30.0);
-        Frame::new()
-            .fill(Color32::from_rgb(16, 17, 24))
-            .corner_radius(12.0)
-            .inner_margin(egui::Margin::symmetric(36, 32))
-            .stroke(Stroke::new(1.5_f32, Color32::from_rgba_premultiplied(99, 144, 250, 70)))
-            .show(ui, |ui| {
-                ui.set_width(card_width);
-                ui.vertical_centered(|ui| {
+    Frame::new()
+        .fill(Color32::from_rgb(16, 17, 24))
+        .corner_radius(12.0)
+        .inner_margin(egui::Margin::symmetric(32, 28))
+        .stroke(Stroke::new(1.5_f32, Color32::from_rgba_premultiplied(99, 144, 250, 70)))
+        .show(ui, |ui| {
+            ui.set_width(card_width);
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
                     ui.add(egui::Image::new(egui::include_image!("../../assets/nex_brand_icon.png"))
-                        .max_height(48.0)
-                        .max_width(48.0));
-                    ui.add_space(16.0);
+                        .max_height(42.0)
+                        .max_width(42.0));
+                    ui.add_space(14.0);
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new("Your Personal Sanctuary is Ready").size(20.0).strong().color(palette::TEXT));
+                        ui.add_space(4.0);
+                        ui.label(RichText::new("Everything you add lives on this computer first. It syncs directly to your trusted devices with zero corporate cloud middle-men.")
+                            .size(13.0).color(palette::TEXT_SECONDARY));
+                    });
+                });
 
-                    ui.label(RichText::new("Your Personal Sanctuary is Ready").size(20.0).strong().color(palette::TEXT));
-                    ui.add_space(6.0);
+                ui.add_space(20.0);
 
-                    ui.label(RichText::new("Everything you add lives on this computer first.\nIt syncs directly to your trusted devices with zero corporate cloud middle-men.")
-                        .size(13.5).color(palette::TEXT_SECONDARY));
-                    ui.add_space(22.0);
-
+                ui.horizontal(|ui| {
                     let btn = ui.add_sized(
-                        Vec2::new(220.0, 38.0),
+                        Vec2::new(230.0, 38.0),
                         egui::Button::new(
                             RichText::new(format!("{}   Add First File to Personal", egui_phosphor::regular::PLUS))
-                                .size(13.5).color(palette::TEXT).strong()
+                                .size(13.0).color(palette::TEXT).strong()
                         )
                         .fill(palette::ACCENT)
                         .corner_radius(8.0),
@@ -283,82 +285,79 @@ fn render_personal_empty_state(ui: &mut Ui, app: &mut NexDesktopApp) {
                         app.ui.active_tab = NavTab::Drive;
                     }
 
-                    ui.add_space(12.0);
+                    ui.add_space(14.0);
                     ui.label(RichText::new("or drag and drop files anywhere into NEX").size(12.0).color(palette::TEXT_DIM));
                 });
             });
-    });
+        });
 }
 
 /// Family Empty State
 fn render_family_empty_state(ui: &mut Ui, app: &mut NexDesktopApp) {
-    let card_width = ui.available_width().min(640.0);
+    let card_width = ui.available_width().min(720.0);
 
-    ui.vertical_centered(|ui| {
-        ui.add_space(20.0);
-        Frame::new()
-            .fill(Color32::from_rgb(16, 17, 24))
-            .corner_radius(12.0)
-            .inner_margin(egui::Margin::symmetric(36, 30))
-            .stroke(Stroke::new(1.5_f32, Color32::from_rgba_premultiplied(52, 211, 153, 70)))
-            .show(ui, |ui| {
-                ui.set_width(card_width);
-                ui.vertical_centered(|ui| {
-                    ui.label(RichText::new(egui_phosphor::regular::HEART).size(42.0).color(palette::ACCENT_GREEN));
+    Frame::new()
+        .fill(Color32::from_rgb(16, 17, 24))
+        .corner_radius(12.0)
+        .inner_margin(egui::Margin::symmetric(32, 28))
+        .stroke(Stroke::new(1.5_f32, Color32::from_rgba_premultiplied(52, 211, 153, 70)))
+        .show(ui, |ui| {
+            ui.set_width(card_width);
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new(egui_phosphor::regular::HEART).size(38.0).color(palette::ACCENT_GREEN));
                     ui.add_space(14.0);
-
-                    ui.label(RichText::new("Your Family Space is Ready").size(20.0).strong().color(palette::TEXT));
-                    ui.add_space(6.0);
-
-                    ui.label(RichText::new("Photos, documents, and memories placed here are shared directly with your family circle.\nThey stay on your physical hardware without third-party tracking or cloud fees.")
-                        .size(13.5).color(palette::TEXT_SECONDARY));
-                    ui.add_space(22.0);
-
-                    ui.horizontal(|ui| {
-                        let btn1 = ui.add_sized(
-                            Vec2::new(190.0, 38.0),
-                            egui::Button::new(
-                                RichText::new(format!("{}   Place File in Family", egui_phosphor::regular::PLUS))
-                                    .size(13.0).color(palette::TEXT).strong()
-                            )
-                            .fill(palette::ACCENT)
-                            .corner_radius(8.0),
-                        );
-                        if btn1.clicked() {
-                            app.ui.active_tab = NavTab::Drive;
-                        }
-
-                        ui.add_space(10.0);
-
-                        let btn2 = ui.add_sized(
-                            Vec2::new(190.0, 38.0),
-                            egui::Button::new(
-                                RichText::new(format!("{}   Pair Member QR", egui_phosphor::regular::QR_CODE))
-                                    .size(13.0).color(palette::TEXT).strong()
-                            )
-                            .fill(palette::PANEL)
-                            .corner_radius(8.0)
-                            .stroke(Stroke::new(1.0_f32, palette::GLASS_BORDER)),
-                        );
-                        if btn2.clicked() {
-                            app.ui.action_state.active_dialog = Some(crate::ui::actions::ActionDialog::ProximitySasVerification {
-                                peer_name: "Amy's Pixel 9".to_string(),
-                                actor_id: [0x55; 32],
-                                safety_words: [
-                                    "RIVER".to_string(),
-                                    "SUMMIT".to_string(),
-                                    "FALCON".to_string(),
-                                    "HARBOR".to_string(),
-                                ],
-                            });
-                        }
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new("Your Family Space is Ready").size(20.0).strong().color(palette::TEXT));
+                        ui.add_space(4.0);
+                        ui.label(RichText::new("Photos, documents, and memories placed here are shared directly with your family circle without third-party tracking or cloud fees.")
+                            .size(13.0).color(palette::TEXT_SECONDARY));
                     });
+                });
+
+                ui.add_space(20.0);
+
+                ui.horizontal(|ui| {
+                    let btn1 = ui.add_sized(
+                        Vec2::new(200.0, 38.0),
+                        egui::Button::new(
+                            RichText::new(format!("{}   Place File in Family", egui_phosphor::regular::PLUS))
+                                .size(13.0).color(palette::TEXT).strong()
+                        )
+                        .fill(palette::ACCENT)
+                        .corner_radius(8.0),
+                    );
+                    if btn1.clicked() {
+                        app.ui.active_tab = NavTab::Drive;
+                    }
 
                     ui.add_space(12.0);
-                    ui.label(RichText::new("Family members sync privately over direct Wi-Fi and local mesh").size(12.0).color(palette::TEXT_DIM));
+
+                    let btn2 = ui.add_sized(
+                        Vec2::new(200.0, 38.0),
+                        egui::Button::new(
+                            RichText::new(format!("{}   Pair Member QR", egui_phosphor::regular::QR_CODE))
+                                .size(13.0).color(palette::TEXT).strong()
+                        )
+                        .fill(palette::PANEL)
+                        .corner_radius(8.0)
+                        .stroke(Stroke::new(1.0_f32, palette::GLASS_BORDER)),
+                    );
+                    if btn2.clicked() {
+                        app.ui.action_state.active_dialog = Some(crate::ui::actions::ActionDialog::ProximitySasVerification {
+                            peer_name: "Amy's Pixel 9".to_string(),
+                            actor_id: [0x55; 32],
+                            safety_words: [
+                                "RIVER".to_string(),
+                                "SUMMIT".to_string(),
+                                "FALCON".to_string(),
+                                "HARBOR".to_string(),
+                            ],
+                        });
+                    }
                 });
             });
-    });
+        });
 }
 
 /// Personal summary cards

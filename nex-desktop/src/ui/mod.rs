@@ -84,13 +84,13 @@ impl NexUiState {
 pub mod palette {
     use egui::Color32;
     // ── Foundation surfaces ──
-    pub const BG: Color32 = Color32::from_rgb(12, 12, 16);              // Near-black void (#0C0C10)
-    pub const SIDEBAR: Color32 = Color32::from_rgb(16, 16, 22);         // Sidebar surface (#101016)
-    pub const PANEL: Color32 = Color32::from_rgb(22, 23, 30);           // Elevated container (#16171E)
-    pub const PANEL_HOVER: Color32 = Color32::from_rgb(28, 30, 40);     // Hover lift (#1C1E28)
-    pub const CARD: Color32 = Color32::from_rgb(20, 21, 28);            // Obsidian Glass card (#14151C)
-    pub const CARD_HOVER: Color32 = Color32::from_rgb(26, 28, 38);      // Elevated card hover (#1A1C26)
-    pub const BORDER_SUBTLE: Color32 = Color32::from_rgb(34, 36, 48);   // Subtle divider (#222430)
+    pub const BG: Color32 = Color32::from_rgb(14, 15, 20);              // Obsidian canvas background (#0E0F14)
+    pub const SIDEBAR: Color32 = Color32::from_rgb(20, 22, 30);         // Distinct sidebar surface (#14161E)
+    pub const PANEL: Color32 = Color32::from_rgb(24, 26, 36);           // Elevated container (#181A24)
+    pub const PANEL_HOVER: Color32 = Color32::from_rgb(30, 33, 46);     // Hover lift (#1E212E)
+    pub const CARD: Color32 = Color32::from_rgb(22, 24, 33);            // Obsidian Glass card (#161821)
+    pub const CARD_HOVER: Color32 = Color32::from_rgb(28, 31, 44);      // Elevated card hover (#1C1F2C)
+    pub const BORDER_SUBTLE: Color32 = Color32::from_rgb(36, 40, 56);   // Crisp divider stroke (#242838)
     pub const GLASS_BORDER: Color32 = Color32::from_rgba_premultiplied(255, 255, 255, 18); // Translucent rim
 
     // ── Brand & Accent ──
@@ -175,10 +175,10 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     SidePanel::left("sidebar")
         .resizable(false)
-        .exact_width(210.0)
+        .exact_width(224.0)
         .frame(Frame::new()
             .fill(palette::SIDEBAR)
-            .inner_margin(egui::Margin { left: 14, right: 14, top: 18, bottom: 14 })
+            .inner_margin(egui::Margin { left: 16, right: 16, top: 20, bottom: 16 })
             .stroke(Stroke::new(1.0_f32, palette::BORDER_SUBTLE))
         )
         .show(ctx, |ui| {
@@ -187,6 +187,7 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
                 ui.add(egui::Image::new(egui::include_image!("../../assets/nex_brand_icon.png"))
                     .max_height(26.0)
                     .max_width(26.0));
+                ui.add_space(4.0);
                 ui.vertical(|ui| {
                     ui.label(RichText::new("NEX").strong().size(16.5).color(palette::TEXT));
                     let sync = app.sync_status();
@@ -220,7 +221,7 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
                 app.ui.command_palette_query.clear();
             }
 
-            ui.add_space(20.0);
+            ui.add_space(18.0);
 
             // ── SPACES (Trust Boundaries) ──
             section_header(ui, "SPACES");
@@ -232,8 +233,7 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
             // ── LENSES (Projections of DAG) ──
             section_header(ui, "LENSES");
             nav_item(ui, app, NavTab::Photos,   egui_phosphor::regular::IMAGE, "Photos", "⌘3");
-            nav_item(ui, app, NavTab::Drive,    egui_phosphor::regular::FOLDER_SIMPLE, "Files", "⌘4");
-            nav_item(ui, app, NavTab::Media,    egui_phosphor::regular::PLAY_CIRCLE, "Media", "");
+            nav_item(ui, app, NavTab::Drive,    egui_phosphor::regular::FOLDER_SIMPLE, "Drive", "⌘4");
             nav_item(ui, app, NavTab::Maps,     egui_phosphor::regular::MAP_TRIFOLD, "Maps", "");
 
             ui.add_space(16.0);
@@ -313,7 +313,7 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
     CentralPanel::default()
         .frame(Frame::new()
             .fill(palette::BG)
-            .inner_margin(egui::Margin { left: 32, right: 32, top: 28, bottom: 20 })
+            .inner_margin(egui::Margin { left: 24, right: 24, top: 24, bottom: 20 })
         )
         .show(ctx, |ui| {
             match app.ui.active_tab {

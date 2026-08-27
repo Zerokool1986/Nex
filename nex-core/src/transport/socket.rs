@@ -167,11 +167,11 @@ impl LanTcpTransportClient {
                     if matches!(existing.object_type, crate::object::types::ObjectType::Synthetic(_)) && !matches!(obj.object_type, crate::object::types::ObjectType::Synthetic(_)) {
                         true
                     } else if !matches!(existing.object_type, crate::object::types::ObjectType::Synthetic(_)) && matches!(obj.object_type, crate::object::types::ObjectType::Synthetic(_)) {
-                        obj.created_epoch > existing.created_epoch ||
-                        (obj.created_epoch == existing.created_epoch && obj.created_lamport > existing.created_lamport)
+                        (obj.created_epoch, obj.created_lamport, obj.winning_mutation_id)
+                            > (existing.created_epoch, existing.created_lamport, existing.winning_mutation_id)
                     } else {
-                        obj.created_epoch > existing.created_epoch ||
-                        (obj.created_epoch == existing.created_epoch && obj.created_lamport >= existing.created_lamport)
+                        (obj.created_epoch, obj.created_lamport, obj.winning_mutation_id)
+                            > (existing.created_epoch, existing.created_lamport, existing.winning_mutation_id)
                     }
                 }
                 None => true,

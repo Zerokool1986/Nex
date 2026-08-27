@@ -145,6 +145,62 @@ impl AntiEntropyEngine {
         Self::generate_batches_for_peer(node, req.session_id, remote_known_frontier, req.max_batch_items)
     }
 
+    pub fn sync_object_store_entry(node: &mut NexNode, obj_id: &[u8; 32]) {
+        if let Some((_opt_val, epoch, lamport, winning_id)) = node.state.state_node.crdt_state.get(obj_id) {
+            if let Some(winning_mutation) = node.state.state_node.dag.get(winning_id) {
+                match &winning_mutation.body.payload {
+                    CrdtPayload::AddLWW { id, value } => {
+                        if let Some(obj) = node.state.object_store.get_mut(id) {
+                            obj.payload_bytes = value.clone();
+                            obj.created_epoch = *epoch;
+                            obj.created_lamport = *lamport;
+                            obj.winning_mutation_id = *winning_id;
+                            obj.tombstoned = false;
+                        } else {
+                            let obj = NexObject {
+                                object_id: *id,
+                                object_type: ObjectType::Synthetic(1),
+                                namespace: [0u8; 32],
+                                owner_actor_id: winning_mutation.body.author,
+                                schema_version: 1,
+                                created_epoch: *epoch,
+                                created_lamport: *lamport,
+                                winning_mutation_id: *winning_id,
+                                metadata: BTreeMap::new(),
+                                payload_bytes: value.clone(),
+                                tombstoned: false,
+                            };
+                            node.state.object_store.insert(*id, obj);
+                        }
+                    }
+                    CrdtPayload::Tombstone { id } | CrdtPayload::RemoveLWW { id } => {
+                        if let Some(obj) = node.state.object_store.get_mut(id) {
+                            obj.tombstoned = true;
+                            obj.created_epoch = *epoch;
+                            obj.created_lamport = *lamport;
+                            obj.winning_mutation_id = *winning_id;
+                        } else {
+                            let obj = NexObject {
+                                object_id: *id,
+                                object_type: ObjectType::Synthetic(1),
+                                namespace: [0u8; 32],
+                                owner_actor_id: winning_mutation.body.author,
+                                schema_version: 1,
+                                created_epoch: *epoch,
+                                created_lamport: *lamport,
+                                winning_mutation_id: *winning_id,
+                                metadata: BTreeMap::new(),
+                                payload_bytes: Vec::new(),
+                                tombstoned: true,
+                            };
+                            node.state.object_store.insert(*id, obj);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     pub fn ingest_batch(node: &mut NexNode, batch: SyncStreamBatch) -> Result<SyncBatchAck, String> {
         let mut ingested = 0;
         for m in batch.mutations {
@@ -157,56 +213,16 @@ impl AntiEntropyEngine {
                 if let Some(wal) = &mut node.storage.wal {
                     let _ = wal.append_mutation(&m);
                 }
-                node.state.state_node.ingest_mutation(m.clone());
+                let (_disp, admitted_ids) = node.state.state_node.ingest_mutation_with_admissions(m.clone());
                 node.state.latest_mutation_id = Some(m.id);
 
-                // Derive object_store directly from crdt_state winners
-                for (_obj_id, (_opt_val, epoch, lamport, winning_id)) in &node.state.state_node.crdt_state {
-                    if let Some(winning_mutation) = node.state.state_node.dag.get(winning_id) {
-                        match &winning_mutation.body.payload {
-                            CrdtPayload::AddLWW { id, value } => {
-                                if let Some(obj) = node.state.object_store.get_mut(id) {
-                                    obj.payload_bytes = value.clone();
-                                    obj.created_epoch = *epoch;
-                                    obj.created_lamport = *lamport;
-                                    obj.tombstoned = false;
-                                } else {
-                                    let obj = NexObject {
-                                        object_id: *id,
-                                        object_type: ObjectType::Synthetic(1),
-                                        namespace: [0u8; 32],
-                                        owner_actor_id: winning_mutation.body.author,
-                                        schema_version: 1,
-                                        created_epoch: *epoch,
-                                        created_lamport: *lamport,
-                                        metadata: BTreeMap::new(),
-                                        payload_bytes: value.clone(),
-                                        tombstoned: false,
-                                    };
-                                    node.state.object_store.insert(*id, obj);
-                                }
-                            }
-                            CrdtPayload::Tombstone { id } | CrdtPayload::RemoveLWW { id } => {
-                                if let Some(obj) = node.state.object_store.get_mut(id) {
-                                    obj.tombstoned = true;
-                                    obj.created_epoch = *epoch;
-                                    obj.created_lamport = *lamport;
-                                } else {
-                                    let obj = NexObject {
-                                        object_id: *id,
-                                        object_type: ObjectType::Synthetic(1),
-                                        namespace: [0u8; 32],
-                                        owner_actor_id: winning_mutation.body.author,
-                                        schema_version: 1,
-                                        created_epoch: *epoch,
-                                        created_lamport: *lamport,
-                                        metadata: BTreeMap::new(),
-                                        payload_bytes: Vec::new(),
-                                        tombstoned: true,
-                                    };
-                                    node.state.object_store.insert(*id, obj);
-                                }
-                            }
+                if !admitted_ids.is_empty() {
+                    for adm_id in admitted_ids {
+                        if let Some(adm_mut) = node.state.state_node.dag.get(&adm_id) {
+                            let target_obj_id = match &adm_mut.body.payload {
+                                CrdtPayload::AddLWW { id, .. } | CrdtPayload::RemoveLWW { id } | CrdtPayload::Tombstone { id } => *id,
+                            };
+                            Self::sync_object_store_entry(node, &target_obj_id);
                         }
                     }
                 }

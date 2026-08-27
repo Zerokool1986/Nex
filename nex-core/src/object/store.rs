@@ -24,11 +24,11 @@ impl NexObjectStore {
                 if matches!(existing.object_type, ObjectType::Synthetic(_)) && !matches!(object.object_type, ObjectType::Synthetic(_)) {
                     true
                 } else if !matches!(existing.object_type, ObjectType::Synthetic(_)) && matches!(object.object_type, ObjectType::Synthetic(_)) {
-                    object.created_epoch > existing.created_epoch ||
-                    (object.created_epoch == existing.created_epoch && object.created_lamport > existing.created_lamport)
+                    (object.created_epoch, object.created_lamport, object.winning_mutation_id)
+                        > (existing.created_epoch, existing.created_lamport, existing.winning_mutation_id)
                 } else {
-                    object.created_epoch > existing.created_epoch ||
-                    (object.created_epoch == existing.created_epoch && object.created_lamport >= existing.created_lamport)
+                    (object.created_epoch, object.created_lamport, object.winning_mutation_id)
+                        > (existing.created_epoch, existing.created_lamport, existing.winning_mutation_id)
                 }
             }
             None => true,

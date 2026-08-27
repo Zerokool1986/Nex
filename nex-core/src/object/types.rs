@@ -50,6 +50,8 @@ pub struct NexObject {
     pub schema_version: u16,
     pub created_epoch: u64,
     pub created_lamport: u64,
+    #[serde(default)]
+    pub winning_mutation_id: [u8; 32],
     pub metadata: BTreeMap<String, String>,
     pub payload_bytes: Vec<u8>,
     pub tombstoned: bool,

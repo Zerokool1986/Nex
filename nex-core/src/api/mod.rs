@@ -191,10 +191,11 @@ impl NexAppApi for NexCoreRuntime {
 
         // 3. Build Mutation
         let parents = self.latest_mutation_id.map(|id| vec![id]).unwrap_or_default();
+        let lamport = if parents.is_empty() { 0 } else { self.state_node.current_lamport + 1 };
         let body = MutationBody {
             author: self.actor_id,
             parents,
-            lamport: self.state_node.current_lamport + 1,
+            lamport,
             epoch: self.current_epoch,
             is_resurrect: false,
             payload: CrdtPayload::AddLWW { id: object_id, value: payload.clone() },
@@ -249,7 +250,7 @@ impl NexAppApi for NexCoreRuntime {
         // 2. Build Mutation
         let payload_val = new_payload.unwrap_or_else(|| existing.payload_bytes.clone());
         let parents = self.latest_mutation_id.map(|id| vec![id]).unwrap_or_default();
-        let lamport = self.state_node.current_lamport + 1;
+        let lamport = if parents.is_empty() { 0 } else { self.state_node.current_lamport + 1 };
         let body = MutationBody {
             author: self.actor_id,
             parents,
@@ -306,10 +307,11 @@ impl NexAppApi for NexCoreRuntime {
 
         // 2. Build Tombstone Mutation
         let parents = self.latest_mutation_id.map(|id| vec![id]).unwrap_or_default();
+        let lamport = if parents.is_empty() { 0 } else { self.state_node.current_lamport + 1 };
         let body = MutationBody {
             author: self.actor_id,
             parents,
-            lamport: self.state_node.current_lamport + 1,
+            lamport,
             epoch: self.current_epoch,
             is_resurrect: false,
             payload: CrdtPayload::Tombstone { id: object_id },

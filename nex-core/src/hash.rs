@@ -11,13 +11,21 @@ pub const DOMAIN_INPUT_COMMITMENT: &[u8] = b"NEX/INPUT_COMMITMENT/v1";
 pub const DOMAIN_FRONTIER_COMMITMENT: &[u8] = b"NEX/FRONTIER_COMMITMENT/v1";
 pub const DOMAIN_ZKVM_JOURNAL: &[u8] = b"NEX/ZKVM_JOURNAL/v1";
 
-pub fn hash_canonical<T: CanonicalSerialize>(domain: &[u8], item: &T) -> [u8; 32] {
+pub fn try_hash_canonical<T: CanonicalSerialize>(domain: &[u8], item: &T) -> Result<[u8; 32], crate::serialize::SerializationError> {
     let mut hasher = Sha256::new();
     hasher.update(domain);
     let mut buf = Vec::new();
-    item.canonical_serialize(&mut buf).expect("Canonical serialization failed");
+    item.canonical_serialize(&mut buf)?;
     hasher.update(&buf);
-    hasher.finalize().into()
+    Ok(hasher.finalize().into())
+}
+
+pub fn hash_canonical<T: CanonicalSerialize>(domain: &[u8], item: &T) -> [u8; 32] {
+    try_hash_canonical(domain, item).expect("Canonical serialization failed")
+}
+
+pub fn try_hash_mutation_body(body: &crate::model::MutationBody) -> Result<[u8; 32], crate::serialize::SerializationError> {
+    try_hash_canonical(DOMAIN_MUTATION, body)
 }
 
 pub fn hash_mutation_body(body: &crate::model::MutationBody) -> [u8; 32] {

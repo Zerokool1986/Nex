@@ -35,7 +35,10 @@ impl VirtualNode {
     /// Ingests an incoming mutation through the strict 6-state mutation lifecycle
     pub fn ingest_mutation(&mut self, mutation: Mutation) -> IngressDisposition {
         // --- 1. CRYPTOGRAPHIC PREIMAGE & VALIDATION ---
-        let computed_id = hash_mutation_body(&mutation.body);
+        let computed_id = match crate::hash::try_hash_mutation_body(&mutation.body) {
+            Ok(id) => id,
+            Err(e) => return IngressDisposition::Invalid(format!("Canonical serialization error: {:?}", e)),
+        };
         if mutation.id != computed_id {
             return IngressDisposition::Invalid("Forged MutationID: ID != hash(Body)".into());
         }

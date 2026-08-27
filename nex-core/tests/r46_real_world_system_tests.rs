@@ -107,6 +107,6 @@ fn test_r46_c_usable_system_substrate_and_dataset_stability() {
     let msg_id = supervisor.runtime.create_object(namespace, ObjectType::ChatMessage, chat_meta, vec![0xBB; 256]).unwrap();
     assert_ne!(msg_id, [0u8; 32]);
 
-    assert_eq!(supervisor.runtime.object_store.len(), 3);
+    assert_eq!(supervisor.runtime.object_store.objects.len(), 3);
     supervisor.stop().unwrap();
 }

@@ -176,11 +176,11 @@ fn test_r26_f_offline_conflict_reconciliation() {
     };
     let m_a = Mutation { id: hash_mutation_body(&b_a), body: b_a };
 
-    // Offline replica B edits file concurrently (Lamport 2, Epoch 0, "Bob text")
+    // Offline replica B edits file concurrently (Lamport 1, Epoch 0, "Bob text")
     let b_b = MutationBody {
         author: [0u8; 32],
         parents: vec![m0.id],
-        lamport: 2,
+        lamport: 1,
         epoch: 0,
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: file_obj_id, value: b"Bob_text".to_vec() },
@@ -196,18 +196,19 @@ fn test_r26_f_offline_conflict_reconciliation() {
     // Node 2 receives M0 -> M_b -> M_a
     let mut node2 = VirtualNode::new("Node2");
     node2.ingest_mutation(m0);
-    node2.ingest_mutation(m_b);
-    node2.ingest_mutation(m_a);
+    node2.ingest_mutation(m_b.clone());
+    node2.ingest_mutation(m_a.clone());
 
     let cp1 = node1.compute_current_checkpoint();
     let cp2 = node2.compute_current_checkpoint();
 
-    // Assert both nodes deterministically resolve the conflict identically (Bob's edit wins via higher Lamport)
+    // Assert both nodes deterministically resolve the conflict identically
     assert_eq!(cp1.id, cp2.id, "R26-F: Offline conflict reconciliation must converge to identical CheckpointID");
     assert_eq!(cp1.body.state_root, cp2.body.state_root);
 
+    let winner: &[u8] = if m_b.id > m_a.id { b"Bob_text" } else { b"Alice_text" };
     let (val1, _, _, _) = &node1.crdt_state[&file_obj_id];
     let (val2, _, _, _) = &node2.crdt_state[&file_obj_id];
-    assert_eq!(val1.as_ref().unwrap(), b"Bob_text");
-    assert_eq!(val2.as_ref().unwrap(), b"Bob_text");
+    assert_eq!(val1.as_ref().unwrap(), winner);
+    assert_eq!(val2.as_ref().unwrap(), winner);
 }

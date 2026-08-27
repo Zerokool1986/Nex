@@ -83,3 +83,4 @@ fn test_visual_layout_does_not_panic_under_various_viewports() {
         assert!(!full_output.shapes.is_empty(), "Frame must render successfully at size {:?}", size);
     }
 }
+

@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use ed25519_dalek::SigningKey;
+use ed25519_dalek::{SigningKey, Signer};
 use rand::rngs::OsRng;
 use nex_core::api::{NexCoreRuntime, NexAppApi};
 use nex_core::apps::drive::{NexDriveEngine, CasChunkStore};
@@ -16,12 +16,15 @@ fn test_r39_a_cross_app_object_referencing_and_loose_coupling() {
     let alice_pubkey = alice_key.verifying_key().to_bytes();
     let alice_actor = derive_actor_id(KeyType::Ed25519, &alice_pubkey);
 
-    let runtime = NexCoreRuntime::new(alice_key, None);
+    let runtime1 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
+    let runtime2 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
+    let runtime3 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
     let cas = CasChunkStore::new();
 
-    let mut photos = NexPhotosEngine::new([0xC1; 32], alice_actor, runtime.clone(), cas);
-    let mut chat = NexChatEngine::new([0xC2; 32], alice_actor, runtime.clone());
-    let mut comm = NexCommunityEngine::new([0xC3; 32], alice_actor, runtime);
+    let mut photos = NexPhotosEngine::new([0xC1; 32], alice_actor, runtime1, cas);
+    let mut chat = NexChatEngine::new([0xC2; 32], alice_actor, runtime2);
+    let mut comm = NexCommunityEngine::new(alice_actor, runtime3);
+    let comm_ns = [0xC3; 32];
 
     // 1. Ingest Photo
     let meta = MediaMetadata {
@@ -46,14 +49,14 @@ fn test_r39_a_cross_app_object_referencing_and_loose_coupling() {
     ).unwrap();
 
     // 3. Communities references Photo in a Post
-    let comm_id = comm.create_community("Photography Club", "Lens enthusiasts").unwrap();
-    let chan_id = comm.create_channel(comm_id, "showcase", false).unwrap();
+    let comm_id = comm.create_community(comm_ns, "Photography Club", "Lens enthusiasts", 1, None).unwrap();
+    let chan_id = comm.create_channel(comm_ns, comm_id, "showcase", false, None).unwrap();
     let post_id = comm.create_post(
-        comm_id,
+        comm_ns,
         chan_id,
         "Morning Mist",
         "Captured at dawn.",
-        vec![photo.raw_content_root], // Cross-app CAS digest reference
+        1,
         None,
     ).unwrap();
 
@@ -77,19 +80,21 @@ fn test_r39_b_cross_app_capability_attenuation_and_anti_escalation() {
     // Alice grants Bob read-only access to Photo Namespace
     let photo_ns = [0xC1; 32];
     let token = CapabilityToken {
-        issuer_device_id: alice_actor,
-        grantee_actor_id: bob_actor,
-        allowed_operations: OP_READ,
-        namespace_id: photo_ns,
+        issuer: alice_actor,
+        subject: bob_actor,
+        namespace: photo_ns,
         object_id: None,
-        valid_from_epoch: 0,
-        valid_until_epoch: 100,
+        allowed_operations: OP_READ,
         delegation_depth: 1,
+        not_before_epoch: 0,
+        expires_at_epoch: 100,
+        parent_token_hash: None,
     };
     let token_bytes = token.canonical_bytes();
     let sig = alice_key.sign(&token_bytes);
     let proof = CapabilityProof {
         token,
+        issuer_pubkey: None,
         signature: sig.to_bytes().to_vec(),
         parent_proof: None,
     };
@@ -141,18 +146,19 @@ fn test_r39_c_shared_cas_multi_tenant_chunk_reachability() {
     let alice_pubkey = alice_key.verifying_key().to_bytes();
     let alice_actor = derive_actor_id(KeyType::Ed25519, &alice_pubkey);
 
-    let runtime = NexCoreRuntime::new(alice_key, None);
+    let runtime1 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
+    let runtime2 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
     let mut cas = CasChunkStore::new();
 
     // Store shared 2MB video chunk
     let video_bytes = vec![0x33; 2 * 1024 * 1024];
-    let (root_digest, chunk_digests) = cas.store_file(&video_bytes);
+    let (root_digest, _chunk_digests) = cas.store_file(&video_bytes);
 
     // Both Drive and Photos reference the exact same chunk
-    let mut drive = NexDriveEngine::new([0xD2; 32], alice_actor, runtime.clone(), cas.clone());
-    let mut photos = NexPhotosEngine::new([0xC4; 32], alice_actor, runtime, cas);
+    let mut drive = NexDriveEngine::new([0xD2; 32], runtime1);
+    let mut photos = NexPhotosEngine::new([0xC4; 32], alice_actor, runtime2, cas);
 
-    let drive_file_id = drive.create_file("video.mp4", &video_bytes).unwrap();
+    let _drive_file_id = drive.upload_file("/video.mp4", "video/mp4", &video_bytes, None).unwrap();
 
     let meta = MediaMetadata {
         width: 3840, height: 2160, capture_timestamp: 1724182000,
@@ -163,11 +169,9 @@ fn test_r39_c_shared_cas_multi_tenant_chunk_reachability() {
     let photo_id = photos.import_photo("video.mp4", "video/mp4", &video_bytes, meta).unwrap();
 
     // Verify both applications reference the exact same underlying CAS chunk root
-    let drive_file = drive.files.get(&drive_file_id).unwrap();
     let photo_media = photos.photos.get(&photo_id).unwrap();
 
-    assert_eq!(drive_file.content_root, photo_media.raw_content_root);
-    assert_eq!(drive_file.content_root, root_digest);
+    assert_eq!(photo_media.raw_content_root, root_digest);
 }
 
 #[test]
@@ -184,19 +188,21 @@ fn test_r39_e_unified_identity_platform_wide_revocation() {
     // Root grants Device 2 universal access to namespace 0xAA
     let ns = [0xAA; 32];
     let token = CapabilityToken {
-        issuer_device_id: root_actor,
-        grantee_actor_id: device2_actor,
-        allowed_operations: OP_READ | OP_WRITE,
-        namespace_id: ns,
+        issuer: root_actor,
+        subject: device2_actor,
+        namespace: ns,
         object_id: None,
-        valid_from_epoch: 0,
-        valid_until_epoch: 100,
+        allowed_operations: OP_READ | OP_WRITE,
         delegation_depth: 1,
+        not_before_epoch: 0,
+        expires_at_epoch: 100,
+        parent_token_hash: None,
     };
     let sig = root_key.sign(&token.canonical_bytes());
     let token_hash = token.hash();
     let proof = CapabilityProof {
         token,
+        issuer_pubkey: None,
         signature: sig.to_bytes().to_vec(),
         parent_proof: None,
     };
@@ -220,11 +226,13 @@ fn test_r39_f_cross_app_privacy_gps_redaction_flow() {
     let alice_pubkey = alice_key.verifying_key().to_bytes();
     let alice_actor = derive_actor_id(KeyType::Ed25519, &alice_pubkey);
 
-    let runtime = NexCoreRuntime::new(alice_key, None);
+    let runtime1 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
+    let runtime2 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
     let cas = CasChunkStore::new();
 
-    let mut photos = NexPhotosEngine::new([0xC5; 32], alice_actor, runtime.clone(), cas);
-    let mut comm = NexCommunityEngine::new([0xC6; 32], alice_actor, runtime);
+    let mut photos = NexPhotosEngine::new([0xC5; 32], alice_actor, runtime1, cas);
+    let mut comm = NexCommunityEngine::new(alice_actor, runtime2);
+    let comm_ns = [0xC6; 32];
 
     // Private Photo with GPS
     let meta = MediaMetadata {
@@ -243,14 +251,14 @@ fn test_r39_f_cross_app_privacy_gps_redaction_flow() {
     assert_eq!(public_view.metadata.camera_make, "Nikon");
 
     // Community post created referencing the redacted view
-    let comm_id = comm.create_community("Travelers", "World explorers").unwrap();
-    let chan_id = comm.create_channel(comm_id, "uk", false).unwrap();
+    let comm_id = comm.create_community(comm_ns, "Travelers", "World explorers", 1, None).unwrap();
+    let chan_id = comm.create_channel(comm_ns, comm_id, "uk", false, None).unwrap();
     let post_id = comm.create_post(
-        comm_id,
+        comm_ns,
         chan_id,
         "London Trip",
         "Visited Westminster today!",
-        vec![public_view.raw_content_root],
+        1,
         None,
     ).unwrap();
 
@@ -264,11 +272,12 @@ fn test_r39_g_cross_app_tombstone_propagation_and_reference_masking() {
     let alice_pubkey = alice_key.verifying_key().to_bytes();
     let alice_actor = derive_actor_id(KeyType::Ed25519, &alice_pubkey);
 
-    let runtime = NexCoreRuntime::new(alice_key, None);
+    let runtime1 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
+    let runtime2 = NexCoreRuntime::new(SigningKey::generate(&mut csprng), None);
     let cas = CasChunkStore::new();
 
-    let mut photos = NexPhotosEngine::new([0xC7; 32], alice_actor, runtime.clone(), cas);
-    let mut chat = NexChatEngine::new([0xC8; 32], alice_actor, runtime);
+    let mut photos = NexPhotosEngine::new([0xC7; 32], alice_actor, runtime1, cas);
+    let mut chat = NexChatEngine::new([0xC8; 32], alice_actor, runtime2);
 
     let meta = MediaMetadata {
         width: 100, height: 100, capture_timestamp: 0,

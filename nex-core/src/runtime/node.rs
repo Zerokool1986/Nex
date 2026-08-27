@@ -586,7 +586,44 @@ impl SovereignNodeRuntime {
         self.state_node.ingest_mutation(m);
     }
 
+    pub fn tick(&mut self, current_epoch: u64) -> Vec<crate::sync::types::IngressDisposition> {
+        self.current_epoch = current_epoch;
+        let mut dispositions = Vec::new();
+        let packets = self.transport.poll_all_incoming();
+
+        for packet in packets {
+            let mut sender_actor = [0u8; 32];
+            if packet.source_address.len() >= 32 {
+                sender_actor.copy_from_slice(&packet.source_address[0..32]);
+            }
+
+            match crate::transport::types::decode_frame(&packet.payload) {
+                Ok((_tag, _flags, inner_bytes)) => {
+                    if let Ok(Some(complete_payload)) = self.reassembler.ingest_chunk_with_epoch(&inner_bytes, current_epoch) {
+                        if let Ok((_inner_tag, _inner_flags, frame_data)) = crate::transport::types::decode_frame(&complete_payload) {
+                            if let Ok(sync_msg) = serde_json::from_slice::<crate::sync::types::SyncMessage>(&frame_data) {
+                                match sync_msg {
+                                    crate::sync::types::SyncMessage::DirectMutationBroadcast(m) => {
+                                        let disp = self.state_node.ingest_mutation(m);
+                                        dispositions.push(disp);
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(_) => {
+                    self.peer_jail.record_penalty(&sender_actor, 10, current_epoch);
+                }
+            }
+        }
+
+        dispositions
+    }
+
     pub fn checkpoint(&mut self) -> Checkpoint {
         self.state_node.compute_current_checkpoint()
     }
 }
+

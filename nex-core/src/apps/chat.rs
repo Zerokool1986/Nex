@@ -240,6 +240,12 @@ impl<A: NexAppApi> NexChatEngine<A> {
         attachments: Vec<ObjectID>,
         _proof: Option<CapabilityProof>,
     ) -> Result<ObjectID, String> {
+        if let Some(channel) = self.channels.get(&channel_id) {
+            if !channel.members.contains_key(&self.local_actor_id) {
+                return Err("Unauthorized: Sender is not a member of this channel".into());
+            }
+        }
+
         let ciphertext = Self::encrypt_payload(plaintext, channel_key);
 
         let mut hasher = Sha256::new();
@@ -284,7 +290,8 @@ impl<A: NexAppApi> NexChatEngine<A> {
         if obj.tombstoned {
             return Err("Message is tombstoned".into());
         }
-        let msg: ChatMessage = serde_json::from_slice(&obj.payload_bytes).map_err(|e| e.to_string())?;
+        let mut msg: ChatMessage = serde_json::from_slice(&obj.payload_bytes).map_err(|e| e.to_string())?;
+        msg.message_id = *message_id;
         let plaintext = Self::decrypt_payload(&msg.ciphertext, channel_key)?;
         Ok((msg, plaintext))
     }

@@ -129,8 +129,8 @@ fn test_r40_c_identity_revocation_race_audit() {
         delegation_depth: 1,
         parent_token_hash: None,
     };
-    let sig = root_key.sign(&token.canonical_bytes());
     let token_hash = token.hash();
+    let sig = root_key.sign(&token_hash);
     let proof = CapabilityProof {
         token,
         issuer_pubkey: Some(root_pubkey.to_vec()),

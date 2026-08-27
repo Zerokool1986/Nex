@@ -118,15 +118,17 @@ impl<A: NexAppApi> NexPhotosEngine<A> {
         meta.insert("filename".into(), filename.to_string());
         meta.insert("mime".into(), mime_type.to_string());
 
-        self.api.create_object(
+        let obj_id = self.api.create_object(
             self.namespace_id,
             ObjectType::PhotoMedia,
             meta,
             encoded,
         ).map_err(|e| format!("{:?}", e))?;
 
-        self.photos.insert(media_id, photo);
-        Ok(media_id)
+        let mut photo = photo;
+        photo.media_id = obj_id;
+        self.photos.insert(obj_id, photo);
+        Ok(obj_id)
     }
 
     pub fn create_album(
@@ -155,15 +157,17 @@ impl<A: NexAppApi> NexPhotosEngine<A> {
         let mut meta = BTreeMap::new();
         meta.insert("title".into(), title.to_string());
 
-        self.api.create_object(
+        let obj_id = self.api.create_object(
             self.namespace_id,
             ObjectType::PhotoAlbum,
             meta,
             encoded,
         ).map_err(|e| format!("{:?}", e))?;
 
-        self.albums.insert(album_id, album);
-        Ok(album_id)
+        let mut album = album;
+        album.album_id = obj_id;
+        self.albums.insert(obj_id, album);
+        Ok(obj_id)
     }
 
     pub fn add_photo_to_album(&mut self, album_id: ObjectID, photo_id: ObjectID) -> Result<(), String> {

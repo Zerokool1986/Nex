@@ -16,15 +16,15 @@ pub fn compute_optag(
     body: &OperationBody,
 ) -> HashRef {
     let payload = (mutation_id, operation_index, body);
-    let mut cbor_bytes = Vec::new();
-    ciborium::into_writer(&payload, &mut cbor_bytes).expect("Failed to serialize to CBOR");
+    let bytes = bincode::serialize(&payload).expect("Failed to serialize to bytes");
 
     let mut hasher = Sha256::new();
     hasher.update(b"NEX/OPTAG/v1");
-    hasher.update(&cbor_bytes);
+    hasher.update(&bytes);
     
     HashRef {
         algorithm_id: 1,
         digest: hasher.finalize().to_vec(),
     }
 }
+

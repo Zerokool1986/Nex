@@ -7,6 +7,10 @@ edition = "2021"
 name = "nex-desktop"
 path = "src/main.rs"
 
+[lib]
+name = "nex_desktop"
+path = "src/lib.rs"
+
 [dependencies]
 nex-core = { path = "../nex-core" }
 eframe = { version = "0.31", features = ["default_fonts", "wgpu"] }

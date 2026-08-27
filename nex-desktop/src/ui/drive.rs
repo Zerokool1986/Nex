@@ -166,7 +166,7 @@ fn render_file_viewport(ui: &mut Ui, app: &mut NexDesktopApp, file: &ProjectedDr
         .inner_margin(12.0)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(RichText::new("📄 File Viewport").strong().size(14.0).color(palette::ACCENT));
+                ui.label(RichText::new(format!("{} File Viewport", egui_phosphor::regular::FILE_TEXT)).strong().size(14.0).color(palette::ACCENT));
                 ui.label(RichText::new(&file.filename).size(14.0).color(palette::TEXT));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.label(RichText::new(format!("Space: {}", file.space_name)).size(11.5).color(palette::TEXT_DIM));
@@ -177,24 +177,32 @@ fn render_file_viewport(ui: &mut Ui, app: &mut NexDesktopApp, file: &ProjectedDr
             // Contextual navigation bridges
             ui.horizontal(|ui| {
                 if file.is_media {
-                    if ui.button("🎬 Open in Media").clicked() {
+                    if ui.button(format!("{} Open in Media", egui_phosphor::regular::FILM_STRIP)).clicked() {
                         app.ui.active_tab = NavTab::Media;
                         app.ui.media_state.selected_media_id = Some(file.object_id);
                         app.ui.selected_entity = Some(SelectedEntity::Object(file.object_id));
                     }
                 }
                 if file.is_location_aware {
-                    if ui.button("🗺 View on Map").clicked() {
+                    if ui.button(format!("{} View on Map", egui_phosphor::regular::MAP_PIN)).clicked() {
                         app.ui.active_tab = NavTab::Maps;
                         app.ui.maps_state.selected_object_id = Some(file.object_id);
                         app.ui.selected_entity = Some(SelectedEntity::Object(file.object_id));
                     }
                 }
-                if ui.button("🌐 View in Network").clicked() {
+                if ui.button(format!("{} View in Network", egui_phosphor::regular::SHARE_NETWORK)).clicked() {
                     app.ui.active_tab = NavTab::Network;
                     app.ui.network_state.selected_node_id = Some(format!("obj_{}", hex::encode(&file.object_id[0..4])));
                     app.ui.network_state.selected_edge_id = None;
                     app.ui.selected_entity = Some(SelectedEntity::Object(file.object_id));
+                }
+                if ui.button(format!("{} Export File", egui_phosphor::regular::EXPORT)).clicked() {
+                    app.ui.action_state.active_dialog = Some(crate::ui::actions::ActionDialog::ExportFile {
+                        object_id: file.object_id,
+                        title: file.filename.clone(),
+                        destination_path: String::new(),
+                    });
+                    app.ui.action_state.text_buffer = format!("d:\\Nex\\export_{}", file.filename);
                 }
             });
             ui.add_space(8.0);
@@ -214,7 +222,7 @@ fn render_file_viewport(ui: &mut Ui, app: &mut NexDesktopApp, file: &ProjectedDr
             }
 
             ui.add_space(6.0);
-            ui.label(RichText::new("ℹ Destructive mutations (Delete/Rename) require sovereign capability tokens (Read-only observation active).")
+            ui.label(RichText::new("ℹ Actions (Rename, Export, Tombstone) are cryptographically capability-gated.")
                 .size(10.5).color(palette::TEXT_DIM));
         });
 }
@@ -225,18 +233,18 @@ fn render_file_row(ui: &mut Ui, app: &mut NexDesktopApp, file: &ProjectedDriveFi
 
     let response = Frame::new()
         .fill(bg)
-        .corner_radius(4.0)
-        .inner_margin(8.0)
+        .corner_radius(6.0)
+        .inner_margin(10.0)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
-                let icon = if file.is_media { "📷" } else if file.is_text { "📝" } else { "📄" };
-                ui.label(RichText::new(icon).size(16.0));
+                let icon_glyph = if file.is_media { egui_phosphor::regular::IMAGE } else if file.is_text { egui_phosphor::regular::FILE_TEXT } else { egui_phosphor::regular::FILE };
+                ui.label(RichText::new(icon_glyph).size(20.0).color(palette::ACCENT));
                 ui.vertical(|ui| {
-                    ui.label(RichText::new(&file.filename).strong().size(13.0).color(palette::TEXT));
-                    ui.label(RichText::new(format!("Folder: {}", file.virtual_folder)).size(11.0).color(palette::TEXT_DIM));
+                    ui.label(RichText::new(&file.filename).strong().size(13.5).color(palette::TEXT));
+                    ui.label(RichText::new(format!("Folder: {}", file.virtual_folder)).size(11.5).color(palette::TEXT_DIM));
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("🔍 Inspect").clicked() {
+                    if ui.button(format!("{} Inspect", egui_phosphor::regular::MAGNIFYING_GLASS)).clicked() {
                         app.ui.selected_entity = Some(SelectedEntity::Object(file.object_id));
                     }
                     ui.add_space(10.0);
@@ -256,9 +264,11 @@ fn render_file_row(ui: &mut Ui, app: &mut NexDesktopApp, file: &ProjectedDriveFi
 fn render_empty_state(ui: &mut Ui) {
     ui.vertical_centered(|ui| {
         ui.add_space(40.0);
-        ui.label(RichText::new("Drive is empty").size(18.0).color(palette::TEXT_DIM));
-        ui.add_space(6.0);
-        ui.label(RichText::new("Store sovereign files or photos to project them in the Drive Lens.")
+        ui.add(egui::Image::new(egui::include_image!("../../assets/nex_brand_icon.png")).max_height(48.0).max_width(48.0));
+        ui.add_space(12.0);
+        ui.label(RichText::new("Drive is empty").size(18.0).strong().color(palette::TEXT));
+        ui.add_space(4.0);
+        ui.label(RichText::new("Import files or documents to project them into your sovereign filesystem.")
             .size(13.0).color(palette::TEXT_DIM));
     });
 }

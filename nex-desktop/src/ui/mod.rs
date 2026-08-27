@@ -50,6 +50,9 @@ pub struct NexUiState {
     pub network_state: network::NetworkViewState,
     /// Sovereign Actions & Dialog State
     pub action_state: actions::ActionState,
+    /// Global Command Palette / Spotlight Launcher state
+    pub command_palette_open: bool,
+    pub command_palette_query: String,
 }
 
 impl NexUiState {
@@ -65,6 +68,8 @@ impl NexUiState {
             people_state: people::PeopleViewState::new(),
             network_state: network::NetworkViewState::new(),
             action_state: actions::ActionState::new(),
+            command_palette_open: false,
+            command_palette_query: String::new(),
         }
     }
 }
@@ -110,7 +115,15 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
             });
         });
         return;
-    }    // Top bar with Master Brand Identity, Truthful Sync Beacon & Tactile Experience Segmented Control
+    }    // Detect Ctrl+K / Cmd+K global shortcut
+    if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::K)) {
+        app.ui.command_palette_open = !app.ui.command_palette_open;
+        if app.ui.command_palette_open {
+            app.ui.command_palette_query.clear();
+        }
+    }
+
+    // Top bar with Master Brand Identity, Command Bar Trigger, Truthful Sync Beacon & Tactile Experience Segmented Control
     TopBottomPanel::top("top_bar")
         .frame(Frame::new().fill(palette::SIDEBAR).inner_margin(10.0))
         .show(ctx, |ui| {
@@ -121,6 +134,15 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
                     .max_width(22.0));
                 ui.label(RichText::new("NEX").strong().size(19.0).color(palette::TEXT));
                 ui.label(RichText::new("• Sovereign Sanctuary").size(12.0).color(palette::TEXT_DIM));
+
+                // Global Sovereign Command Bar Button (Raycast/Linear style)
+                ui.add_space(8.0);
+                if ui.button(RichText::new(format!("{}  Search or Jump...  Ctrl+K", egui_phosphor::regular::MAGNIFYING_GLASS)).size(12.0).color(palette::TEXT_DIM))
+                    .clicked()
+                {
+                    app.ui.command_palette_open = true;
+                    app.ui.command_palette_query.clear();
+                }
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     // Tactile Segmented Control for Global Experience Slider
@@ -172,7 +194,7 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 let msg = if app.ui.status_msg.is_empty() {
-                    format!("{} objects in single DAG | Mode: {:?} | No Cloud Dependency", app.object_count(), app.ui.complexity)
+                    format!("{} objects in single DAG | Mode: {:?} | No Cloud Dependency | Press Ctrl+K for Launcher", app.object_count(), app.ui.complexity)
                 } else {
                     app.ui.status_msg.clone()
                 };
@@ -232,6 +254,86 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
 
             // Trigger action modal dialogs (Import, Export, Proximity SAS Verification)
             actions::render_action_dialog(ui, app);
+        });
+
+    // Global Command Palette / Spotlight Launcher Modal
+    render_command_palette(ctx, app);
+}
+
+fn render_command_palette(ctx: &Context, app: &mut NexDesktopApp) {
+    if !app.ui.command_palette_open {
+        return;
+    }
+
+    egui::Window::new("Sovereign Command Palette")
+        .collapsible(false)
+        .resizable(false)
+        .title_bar(false)
+        .anchor(egui::Align2::CENTER_TOP, Vec2::new(0.0, 100.0))
+        .frame(Frame::new().fill(Color32::from_rgb(18, 20, 28)).corner_radius(10.0).inner_margin(14.0).stroke(Stroke::new(1.0_f32, palette::ACCENT)))
+        .show(ctx, |ui| {
+            ui.set_width(480.0);
+            ui.horizontal(|ui| {
+                ui.label(RichText::new(egui_phosphor::regular::MAGNIFYING_GLASS).size(18.0).color(palette::ACCENT));
+                let response = ui.add(egui::TextEdit::singleline(&mut app.ui.command_palette_query)
+                    .hint_text("Type to jump across Spaces, Lenses, Objects, or People... (ESC to close)")
+                    .desired_width(420.0));
+                response.request_focus();
+                if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                    app.ui.command_palette_open = false;
+                }
+            });
+
+            ui.add_space(8.0);
+            ui.separator();
+            ui.add_space(6.0);
+
+            let query = app.ui.command_palette_query.to_lowercase();
+            let mut matched = 0;
+
+            // Navigation shortcuts
+            let nav_targets = [
+                ("Personal Sanctuary", NavTab::Home, egui_phosphor::regular::HOUSE),
+                ("Family Space", NavTab::Family, egui_phosphor::regular::HEART),
+                ("Photos Lens", NavTab::Photos, egui_phosphor::regular::IMAGE),
+                ("Drive Documents", NavTab::Drive, egui_phosphor::regular::HARD_DRIVE),
+                ("Media Stream", NavTab::Media, egui_phosphor::regular::FILM_STRIP),
+                ("Maps & Geotags", NavTab::Maps, egui_phosphor::regular::MAP_PIN),
+                ("Sovereign People", NavTab::People, egui_phosphor::regular::USERS),
+                ("Devices & Hardware", NavTab::Devices, egui_phosphor::regular::DEVICES),
+                ("Network Topology", NavTab::Network, egui_phosphor::regular::SHARE_NETWORK),
+                ("Node Settings", NavTab::Settings, egui_phosphor::regular::GEAR),
+            ];
+
+            for (name, tab, icon) in nav_targets {
+                if query.is_empty() || name.to_lowercase().contains(&query) {
+                    if ui.button(RichText::new(format!("{}  Jump to {}", icon, name)).size(13.5).color(palette::TEXT)).clicked() {
+                        app.ui.active_tab = tab;
+                        app.ui.command_palette_open = false;
+                    }
+                    matched += 1;
+                    if matched >= 6 { break; }
+                }
+            }
+
+            // Quick Objects
+            for (obj_id, obj) in &app.node.state.object_store {
+                if obj.tombstoned { continue; }
+                let title = obj.metadata.get("title").or_else(|| obj.metadata.get("filename")).cloned().unwrap_or_else(|| "Untitled Object".to_string());
+                if !query.is_empty() && title.to_lowercase().contains(&query) {
+                    if ui.button(RichText::new(format!("{}  Inspect {}", egui_phosphor::regular::FILE_TEXT, title)).size(13.0).color(palette::ACCENT)).clicked() {
+                        app.ui.selected_entity = Some(inspector::SelectedEntity::Object(*obj_id));
+                        app.ui.command_palette_open = false;
+                    }
+                    matched += 1;
+                    if matched >= 10 { break; }
+                }
+            }
+
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("↵ Select • ESC Dismiss • Command Launcher Active").size(11.0).color(palette::TEXT_DIM));
+            });
         });
 }
 

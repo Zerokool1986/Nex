@@ -19,12 +19,7 @@ fn setup_test_app() -> NexDesktopApp {
     let mut node = NexNode::new(tmp.path(), key);
     node.start().unwrap();
 
-    NexDesktopApp {
-        node,
-        data_dir: tmp.into_path(),
-        ui: NexUiState::new(),
-        status: AppStatus::Running,
-    }
+    NexDesktopApp::new_test(node, tmp.into_path())
 }
 
 #[test]

@@ -602,12 +602,7 @@ mod tests {
             tombstoned: true,
         });
 
-        let app = NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir);
 
         (app, obj1, obj2)
     }
@@ -678,12 +673,7 @@ mod tests {
         let data_dir = PathBuf::from("d:\\Nex\\test_data_empty_drive");
         let node = NexNode::new(&data_dir, signing_key);
 
-        let app = NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir);
 
         let catalog = derive_drive_catalog(&app);
         assert!(catalog.is_empty(), "Empty node must produce empty Drive catalog");

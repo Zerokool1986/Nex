@@ -460,12 +460,7 @@ mod tests {
             tombstoned: false,
         });
 
-        let app = NexDesktopApp {
-            node,
-            data_dir,
-            ui: NexUiState::new(),
-            status: AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir);
 
         (app, obj_id)
     }

@@ -590,12 +590,7 @@ mod tests {
             tombstoned: false,
         });
 
-        let app = NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir);
 
         (app, obj_id)
     }
@@ -677,12 +672,7 @@ mod tests {
         let data_dir = PathBuf::from("d:\\Nex\\test_data_stage9_empty_maps");
         let node = NexNode::new(&data_dir, signing_key);
 
-        let app = NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir);
 
         let catalog = derive_geo_catalog(&app);
         assert!(catalog.is_empty(), "Empty node must not fabricate locations");

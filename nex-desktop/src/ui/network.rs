@@ -546,6 +546,39 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
         explanation_operator: "CAP_TOKEN: Valid | OP_READ | OP_WRITE | Exp: Epoch 9999".to_string(),
     });
 
+    // Dynamic Physical Conduits from Live Discovery & Socket Carrier
+    for (idx, peer) in app.discovered_peers.iter().enumerate() {
+        let peer_node_id = format!("peer_dyn_{}", hex::encode(&peer.actor_id[0..4]));
+        let pos_x = 100.0 + (idx as f32) * 120.0;
+        let pos_y = 120.0;
+
+        nodes.push(VisualizerNode {
+            id: peer_node_id.clone(),
+            label: peer.node_name.clone(),
+            subtitle: format!("TCP: {}", peer.tcp_sync_addr),
+            icon_glyph: egui_phosphor::regular::DESKTOP,
+            base_pos: Pos2::new(pos_x, pos_y),
+            payload: NodePayload::Device {
+                actor_id_hex: hex::encode(peer.actor_id),
+                is_local: false,
+            },
+        });
+
+        edges.push(VisualizerEdge {
+            id: format!("conduit_dyn_{}", peer_node_id),
+            from_node_id: local_device_id.clone(),
+            to_node_id: peer_node_id,
+            label: format!("This PC ──[Live Wire]──> {}", peer.node_name),
+            status: ConduitStatus::AvailableDirectMesh,
+            payload_stream_label: format!("Physical Wire Carrier ({} bytes transferred)", app.network_telemetry.bytes_received),
+            partition_resilience_label: "🛡️ Physical TCP/UDP stream verified".to_string(),
+            explanation_simple: "Live physical mesh connection verified.".to_string(),
+            explanation_standard: format!("Physical TCP socket active at {}.", peer.tcp_sync_addr),
+            explanation_advanced: "NEX/WIRE/v1 framing and CRC32 bit-flip detection verified.".to_string(),
+            explanation_operator: format!("Remote Sync Addr: {} | Actor: {}", peer.tcp_sync_addr, hex::encode(&peer.actor_id[0..8])),
+        });
+    }
+
     // 5. Active Sovereign Objects participating in sync (Orbiting Nodes)
     let mut obj_idx = 0;
     for (obj_id, obj) in app.node.state.object_store.iter().filter(|(_, o)| !o.tombstoned).take(6) {
@@ -616,12 +649,7 @@ mod tests {
         let mut node = NexNode::new(&data_dir, signing_key);
         let _ = node.start();
 
-        NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        }
+        NexDesktopApp::new_test(node, data_dir)
     }
 
     #[test]

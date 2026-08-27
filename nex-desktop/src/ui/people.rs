@@ -536,12 +536,7 @@ mod tests {
             tombstoned: false,
         });
 
-        let app = NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir);
 
         (app, amy_actor_id)
     }
@@ -580,12 +575,7 @@ mod tests {
         let data_dir = PathBuf::from("d:\\Nex\\test_data_empty_people");
         let node = NexNode::new(&data_dir, signing_key);
 
-        let app = NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir);
 
         let people = derive_people_catalog(&app);
         assert!(!people.is_empty(), "Local root self is always present");

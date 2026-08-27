@@ -45,12 +45,7 @@ impl TestContext {
         let mut node = NexNode::new(&data_dir, signing_key);
         node.start().expect("Node genesis start must succeed");
 
-        let app = NexDesktopApp {
-            node,
-            data_dir: data_dir.clone(),
-            ui: NexUiState::new(),
-            status: AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir.clone());
 
         Self { data_dir, app }
     }
@@ -656,12 +651,7 @@ fn test_journey_15_full_return_to_origin_lifecycle() {
         node.start().unwrap();
         expected_actor_id = node.identity.actor_id;
 
-        let mut app = NexDesktopApp {
-            node,
-            data_dir: data_dir.clone(),
-            ui: NexUiState::new(),
-            status: AppStatus::Running,
-        };
+        let mut app = NexDesktopApp::new_test(node, data_dir.clone());
 
         create_test_object(
             &mut app,

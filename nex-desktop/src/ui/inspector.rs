@@ -357,12 +357,7 @@ mod tests {
         let data_dir = PathBuf::from("d:\\Nex\\test_data_inspector_stage9");
         let mut node = NexNode::new(&data_dir, signing_key);
         let _ = node.start();
-        NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        }
+        NexDesktopApp::new_test(node, data_dir)
     }
 
     #[test]

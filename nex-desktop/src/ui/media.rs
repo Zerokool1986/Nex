@@ -1,4 +1,4 @@
-﻿use egui::{Ui, RichText, Frame, Color32, Vec2, ProgressBar, Sense, FontId};
+use egui::{Ui, RichText, Frame, Color32, Vec2, ProgressBar, Sense, FontId};
 use nex_core::object::types::{ObjectID, ObjectType, NexObject};
 use nex_core::runtime::shell::SpaceType;
 use crate::app::NexDesktopApp;
@@ -433,12 +433,7 @@ mod tests {
             tombstoned: false,
         });
 
-        NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        }
+        NexDesktopApp::new_test(node, data_dir)
     }
 
     #[test]
@@ -502,12 +497,7 @@ mod tests {
         let mut node = NexNode::new(&data_dir, signing_key);
         let _ = node.start();
 
-        let app = NexDesktopApp {
-            node,
-            data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
-        };
+        let app = NexDesktopApp::new_test(node, data_dir);
 
         let catalog = derive_media_catalog(&app);
         assert!(catalog.is_empty(), "Empty store must yield empty media catalog");

@@ -656,3 +656,58 @@ fn test_r50_4_j_wal_replay_out_of_order_crdt_lww_consistency() {
 
     node.stop().unwrap();
 }
+
+#[test]
+fn test_r50_4_k_wal_recovery_scale_with_10k_history() {
+    use nex_core::model::{Mutation, MutationBody, CrdtPayload};
+    use nex_core::hash::hash_mutation_body;
+    use nex_core::storage::wal::WriteAheadLog;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let wal_path = tmp.path().join("wal.log");
+
+    let mut prev_id = [0u8; 32];
+    let target_obj_id = [0x55; 32];
+
+    // Pre-generate and append 10,000 sequential valid mutations to wal.log
+    {
+        let mut wal = WriteAheadLog::open(&wal_path).unwrap();
+        for i in 0..10_000u64 {
+            let parents = if i == 0 { vec![] } else { vec![prev_id] };
+            let body = MutationBody {
+                author: [0x01; 32],
+                parents,
+                lamport: i,
+                epoch: 0,
+                is_resurrect: false,
+                payload: CrdtPayload::AddLWW {
+                    id: target_obj_id,
+                    value: format!("VAL_{}", i).into_bytes(),
+                },
+            };
+            let m = Mutation::new(hash_mutation_body(&body), body);
+            prev_id = m.id;
+            wal.append_mutation(&m).unwrap();
+        }
+    }
+
+    let start_time = std::time::Instant::now();
+
+    // Start fresh NexNode on this directory (replaying 10,000 mutations)
+    let mut csprng = OsRng;
+    let key = SigningKey::generate(&mut csprng);
+    let mut node = NexNode::new(tmp.path(), key);
+    node.start().expect("WAL recovery of 10k mutations must succeed");
+
+    let duration = start_time.elapsed();
+    println!("10k WAL recovery duration: {:?}", duration);
+
+    // Verify recovery accuracy: DAG holds all 10,000 entries and object_store holds final winning mutation
+    assert_eq!(node.state.state_node.dag.len(), 10_000);
+    let obj = node.state.object_store.get(&target_obj_id).unwrap();
+    assert_eq!(obj.payload_bytes, b"VAL_9999".to_vec());
+    assert_eq!(obj.created_lamport, 9999);
+    assert_eq!(obj.winning_mutation_id, prev_id);
+
+    node.stop().unwrap();
+}

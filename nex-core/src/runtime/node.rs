@@ -181,56 +181,69 @@ impl NexNode {
         self.operational_state = NodeOperationalState::ReplayingWal;
         let wal_path = self.storage.data_dir.join("wal.log");
         if let Ok(mutations) = WriteAheadLog::recover(&wal_path) {
+            let mut affected_objects = std::collections::HashSet::new();
             for m in mutations {
-                self.state.state_node.ingest_mutation(m.clone());
+                let target_obj_id = match &m.body.payload {
+                    CrdtPayload::AddLWW { id, .. } | CrdtPayload::RemoveLWW { id } | CrdtPayload::Tombstone { id } => *id,
+                };
+                let (_disp, admitted_ids) = self.state.state_node.ingest_mutation_with_admissions(m.clone());
                 self.state.latest_mutation_id = Some(m.id);
+                if !admitted_ids.is_empty() {
+                    affected_objects.insert(target_obj_id);
+                }
             }
 
-            // Derive object_store directly from crdt_state winners after WAL replay
-            for (_obj_id, (_opt_val, epoch, lamport, winning_id)) in &self.state.state_node.crdt_state {
-                if let Some(winning_mutation) = self.state.state_node.dag.get(winning_id) {
-                    match &winning_mutation.body.payload {
-                        CrdtPayload::AddLWW { id, value } => {
-                            if let Some(obj) = self.state.object_store.get_mut(id) {
-                                obj.payload_bytes = value.clone();
-                                obj.created_epoch = *epoch;
-                                obj.created_lamport = *lamport;
-                                obj.tombstoned = false;
-                            } else {
-                                let obj = NexObject {
-                                    object_id: *id,
-                                    object_type: ObjectType::Synthetic(1),
-                                    namespace: [0u8; 32],
-                                    owner_actor_id: winning_mutation.body.author,
-                                    schema_version: 1,
-                                    created_epoch: *epoch,
-                                    created_lamport: *lamport,
-                                    metadata: BTreeMap::new(),
-                                    payload_bytes: value.clone(),
-                                    tombstoned: false,
-                                };
-                                self.state.object_store.insert(*id, obj);
+            // Derive object_store directly from crdt_state winners only for affected objects
+            for obj_id in affected_objects {
+                if let Some((_opt_val, epoch, lamport, winning_id)) = self.state.state_node.crdt_state.get(&obj_id) {
+                    if let Some(winning_mutation) = self.state.state_node.dag.get(winning_id) {
+                        match &winning_mutation.body.payload {
+                            CrdtPayload::AddLWW { id, value } => {
+                                if let Some(obj) = self.state.object_store.get_mut(id) {
+                                    obj.payload_bytes = value.clone();
+                                    obj.created_epoch = *epoch;
+                                    obj.created_lamport = *lamport;
+                                    obj.winning_mutation_id = *winning_id;
+                                    obj.tombstoned = false;
+                                } else {
+                                    let obj = NexObject {
+                                        object_id: *id,
+                                        object_type: ObjectType::Synthetic(1),
+                                        namespace: [0u8; 32],
+                                        owner_actor_id: winning_mutation.body.author,
+                                        schema_version: 1,
+                                        created_epoch: *epoch,
+                                        created_lamport: *lamport,
+                                        winning_mutation_id: *winning_id,
+                                        metadata: BTreeMap::new(),
+                                        payload_bytes: value.clone(),
+                                        tombstoned: false,
+                                    };
+                                    self.state.object_store.insert(*id, obj);
+                                }
                             }
-                        }
-                        CrdtPayload::Tombstone { id } | CrdtPayload::RemoveLWW { id } => {
-                            if let Some(obj) = self.state.object_store.get_mut(id) {
-                                obj.tombstoned = true;
-                                obj.created_epoch = *epoch;
-                                obj.created_lamport = *lamport;
-                            } else {
-                                let obj = NexObject {
-                                    object_id: *id,
-                                    object_type: ObjectType::Synthetic(1),
-                                    namespace: [0u8; 32],
-                                    owner_actor_id: winning_mutation.body.author,
-                                    schema_version: 1,
-                                    created_epoch: *epoch,
-                                    created_lamport: *lamport,
-                                    metadata: BTreeMap::new(),
-                                    payload_bytes: Vec::new(),
-                                    tombstoned: true,
-                                };
-                                self.state.object_store.insert(*id, obj);
+                            CrdtPayload::Tombstone { id } | CrdtPayload::RemoveLWW { id } => {
+                                if let Some(obj) = self.state.object_store.get_mut(id) {
+                                    obj.tombstoned = true;
+                                    obj.created_epoch = *epoch;
+                                    obj.created_lamport = *lamport;
+                                    obj.winning_mutation_id = *winning_id;
+                                } else {
+                                    let obj = NexObject {
+                                        object_id: *id,
+                                        object_type: ObjectType::Synthetic(1),
+                                        namespace: [0u8; 32],
+                                        owner_actor_id: winning_mutation.body.author,
+                                        schema_version: 1,
+                                        created_epoch: *epoch,
+                                        created_lamport: *lamport,
+                                        winning_mutation_id: *winning_id,
+                                        metadata: BTreeMap::new(),
+                                        payload_bytes: Vec::new(),
+                                        tombstoned: true,
+                                    };
+                                    self.state.object_store.insert(*id, obj);
+                                }
                             }
                         }
                     }
@@ -377,7 +390,7 @@ impl NexAppApi for NexNode {
             payload: CrdtPayload::AddLWW { id: object_id, value: payload.clone() },
         };
 
-        self.execute_mutation(body)?;
+        let m_id = self.execute_mutation(body)?;
 
         let obj = NexObject {
             object_id,
@@ -387,6 +400,7 @@ impl NexAppApi for NexNode {
             schema_version: 1,
             created_epoch: self.state.current_epoch,
             created_lamport: lamport,
+            winning_mutation_id: m_id,
             metadata,
             payload_bytes: payload,
             tombstoned: false,
@@ -444,6 +458,9 @@ impl NexAppApi for NexNode {
                 obj.metadata = m;
             }
             obj.payload_bytes = payload_bytes;
+            obj.created_epoch = self.state.current_epoch;
+            obj.created_lamport = lamport;
+            obj.winning_mutation_id = m_id;
         }
 
         Ok(m_id)
@@ -484,6 +501,9 @@ impl NexAppApi for NexNode {
         let m_id = self.execute_mutation(body)?;
         if let Some(obj) = self.state.object_store.get_mut(&object_id) {
             obj.tombstoned = true;
+            obj.created_epoch = self.state.current_epoch;
+            obj.created_lamport = lamport;
+            obj.winning_mutation_id = m_id;
         }
 
         Ok(m_id)

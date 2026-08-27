@@ -156,7 +156,7 @@ impl UniversalObjectInspector {
         verification_checks.push(VerificationCheck {
             category: "Object Identity".to_string(),
             status: EpistemicStatus::VerifiedFact,
-            summary: "BLAKE3-256 canonical hash matches object identifier exactly.".to_string(),
+            summary: "Content-addressed BLAKE3-256 digest matches canonical identifier.".to_string(),
             proof_detail: format!("BLAKE3: {}", hex::encode(obj.object_id)),
         });
 
@@ -166,7 +166,7 @@ impl UniversalObjectInspector {
         verification_checks.push(VerificationCheck {
             category: "Content Integrity".to_string(),
             status: integrity_status,
-            summary: format!("Exact bitstream preserved ({:.1} KB in FastCDC CAS).", payload_len as f64 / 1024.0),
+            summary: format!("Observed content matches expected canonical digest ({:.1} KB in FastCDC CAS).", payload_len as f64 / 1024.0),
             proof_detail: format!("FastCDC chunks verified: {}", (payload_len / 4096).max(1)),
         });
 
@@ -174,7 +174,7 @@ impl UniversalObjectInspector {
         verification_checks.push(VerificationCheck {
             category: "Ownership Signature".to_string(),
             status: EpistemicStatus::VerifiedFact,
-            summary: format!("Master Ed25519 signature valid from {}.", owner_name),
+            summary: format!("Authorship signature verified for {}.", owner_name),
             proof_detail: format!("Author ActorID: {}", hex::encode(obj.owner_actor_id)),
         });
 
@@ -182,7 +182,7 @@ impl UniversalObjectInspector {
         verification_checks.push(VerificationCheck {
             category: "Storage Residency".to_string(),
             status: EpistemicStatus::VerifiedFact,
-            summary: "Physical primary allocation verified on This PC (Local NVMe SSD).".to_string(),
+            summary: "Object payload present in local content-addressed storage on this PC.".to_string(),
             proof_detail: format!("Local CAS store path: d:\\Nex\\vault • LSN {}", obj.created_lamport),
         });
 
@@ -191,7 +191,7 @@ impl UniversalObjectInspector {
         verification_checks.push(VerificationCheck {
             category: "Capability Permissions".to_string(),
             status: cap_status,
-            summary: format!("Authorized for {}: {}.", space, access_summary),
+            summary: format!("Access authorized by capability grant for {}: {}.", space, access_summary),
             proof_detail: format!("Namespace 0x{} • Delegation depth: 0", hex::encode(&obj.namespace[0..4])),
         });
 
@@ -200,8 +200,8 @@ impl UniversalObjectInspector {
         verification_checks.push(VerificationCheck {
             category: "Replica Reconciliation".to_string(),
             status: replica_status,
-            summary: "Reconciled with trusted peer mesh via SMT anti-entropy sync.".to_string(),
-            proof_detail: format!("Epoch {} • Merkle Root verified", obj.created_epoch),
+            summary: format!("Last verified reconciliation state: Epoch {}.", obj.created_epoch),
+            proof_detail: format!("SMT Merkle Root matches canonical state for Epoch {}", obj.created_epoch),
         });
 
         // ── Physical Residency Breakdown ──
@@ -211,7 +211,7 @@ impl UniversalObjectInspector {
             device_glyph: "🖥",
             role: "Primary Local Host".to_string(),
             status: EpistemicStatus::VerifiedFact,
-            status_label: "100% stored on local NVMe SSD (Verified)".to_string(),
+            status_label: "Stored and verified locally on this PC".to_string(),
             byte_count: payload_len,
         });
 
@@ -221,7 +221,7 @@ impl UniversalObjectInspector {
                 device_glyph: "📱",
                 role: "Verified Mesh Peer".to_string(),
                 status: EpistemicStatus::CurrentObservation,
-                status_label: "Direct Wi-Fi Mesh Replica (Synchronized)".to_string(),
+                status_label: "Direct Wi-Fi mesh replica currently verified".to_string(),
                 byte_count: payload_len,
             });
             physical_residency.push(PhysicalResidencyRecord {
@@ -229,7 +229,7 @@ impl UniversalObjectInspector {
                 device_glyph: "💻",
                 role: "Trusted Peer (Away)".to_string(),
                 status: EpistemicStatus::ExpectedHistorical,
-                status_label: "Replicated (Will reconcile anti-entropy when nearby)".to_string(),
+                status_label: format!("Last known synchronized state: Epoch {} • Peer currently away", obj.created_epoch),
                 byte_count: payload_len,
             });
         }

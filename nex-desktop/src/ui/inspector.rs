@@ -140,15 +140,15 @@ fn render_object_inspector(ui: &mut Ui, app: &mut NexDesktopApp, object_id: &Obj
             ui.add_space(10.0);
 
             // ── Tier 1: Human Truth Grid ──
-            Frame::new().fill(palette::PANEL).corner_radius(8.0).inner_margin(10.0).stroke(Stroke::new(1.0, palette::GLASS_BORDER)).show(ui, |ui| {
+            Frame::new().fill(palette::PANEL).corner_radius(8.0).inner_margin(10.0).stroke(Stroke::new(1.0_f32, palette::GLASS_BORDER)).show(ui, |ui| {
                 ui.label(RichText::new("HUMAN TRUTH").size(11.0).strong().color(palette::ACCENT));
                 ui.add_space(4.0);
 
                 truth_row(ui, "Owner:", &inspector.owner_name);
                 truth_row(ui, "Space:", &format!("{} Space", inspector.space_name));
-                truth_row(ui, "Stored on:", "🖥 This PC (Local Primary NVMe SSD)");
-                truth_row(ui, "Replicas:", &format!("{} trusted physical copies", inspector.replica_count));
-                truth_row(ui, "Integrity:", "Bit-for-bit verified (0 bit rot)");
+                truth_row(ui, "Stored on:", "🖥 This PC (Local NVMe SSD)");
+                truth_row(ui, "Replicas:", &format!("{} trusted physical copies recorded", inspector.replica_count));
+                truth_row(ui, "Integrity:", "Content matches canonical identity (BLAKE3 verified)");
                 truth_row(ui, "Access:", &inspector.access_summary);
             });
 

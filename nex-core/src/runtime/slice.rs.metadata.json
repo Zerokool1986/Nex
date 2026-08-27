@@ -1,0 +1,4 @@
+{
+  "summary": "Update runtime/slice.rs to synchronize full object store metadata across nodes.",
+  "updatedAt": "2026-08-23T02:25:37.127352900Z"
+}

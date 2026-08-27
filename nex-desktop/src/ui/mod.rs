@@ -1,4 +1,4 @@
-pub mod home;
+﻿pub mod home;
 pub mod photos;
 pub mod media;
 pub mod maps;
@@ -273,7 +273,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 100,
             created_lamport: 1,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: meta,
             payload_bytes: vec![0x55; 4096],
             tombstoned: false,

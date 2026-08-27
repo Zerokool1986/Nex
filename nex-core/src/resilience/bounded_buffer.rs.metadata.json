@@ -1,0 +1,4 @@
+{
+  "summary": "BoundedDependencyBuffer implementation with strict capacity limits, LRU eviction, and TTL pruning.",
+  "updatedAt": "2026-08-20T21:15:01.770089700Z"
+}

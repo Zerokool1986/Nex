@@ -1,0 +1,4 @@
+{
+  "summary": "Resilience module entrypoint exposing rate_limiter, peer_jail, bounded_buffer, and preflight_shield.",
+  "updatedAt": "2026-08-20T21:15:07.103681300Z"
+}

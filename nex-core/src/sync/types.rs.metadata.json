@@ -1,0 +1,4 @@
+{
+  "summary": "Sync types with raw proof_bytes in FastSyncBundle to maintain zero-dependency purity in nex-core.",
+  "updatedAt": "2026-08-20T21:05:13.883254800Z"
+}

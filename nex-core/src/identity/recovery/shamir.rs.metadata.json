@@ -1,0 +1,4 @@
+{
+  "summary": "Create identity/recovery/shamir.rs implementing Galois Field GF(2^8) Shamir Secret Sharing for 256-bit root seeds.",
+  "updatedAt": "2026-08-22T23:27:17.323194600Z"
+}

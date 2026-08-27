@@ -1,0 +1,80 @@
+{
+    "version": "nex-protocol-v0.8",
+    "vectors": [
+        {
+            "category": "CBOR",
+            "test_name": "HashRef_Encoding",
+            "description": "Validates HashRef is encoded as a 2-element CBOR array [AlgorithmID, Digest]",
+            "inputs": {
+                "alg": 1,
+                "digest": "0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "expected_cbor_hex": "820158200000000000000000000000000000000000000000000000000000000000000000",
+            "expected_hash_hex": null,
+            "expected_error_state": null,
+            "should_reject": false
+        },
+        {
+            "category": "Validation",
+            "test_name": "Pipeline_Lamport_Before_Crypto",
+            "description": "Evaluator must reject INVALID_LAMPORT_RANK before evaluating cryptographic signatures.",
+            "inputs": {
+                "parents_lamport": [
+                    1
+                ],
+                "mutation_lamport": 99,
+                "sig_valid": true
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "INVALID_LAMPORT_RANK",
+            "should_reject": true
+        },
+        {
+            "category": "Validation",
+            "test_name": "Missing_History_Unresolved",
+            "description": "Missing CausalParents halts evaluation as UNRESOLVED without producing semantic state.",
+            "inputs": {
+                "parents": [
+                    "hash_unknown"
+                ]
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "UNRESOLVED",
+            "should_reject": true
+        },
+        {
+            "category": "CRDT",
+            "test_name": "EvaluateCRDT_Traversal_Order",
+            "description": "Validates that mutations are evaluated in ascending CausalOrderKey = (LamportRank, MutationID) sequence.",
+            "inputs": {
+                "mutation_a": {
+                    "lamport": 2,
+                    "id": "FFFF"
+                },
+                "mutation_b": {
+                    "lamport": 2,
+                    "id": "0000"
+                }
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "EVAL_ORDER_B_THEN_A",
+            "should_reject": false
+        },
+        {
+            "category": "CRDT",
+            "test_name": "Checkpoint_Payload_Exclusion",
+            "description": "Validates that Type 6 Checkpoint payloads are excluded from EvaluateCRDT state modifications.",
+            "inputs": {
+                "mutation_type": 6,
+                "payload": "frontier_data"
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_error_state": "STATE_UNCHANGED",
+            "should_reject": false
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Create identity/pairing.rs implementing out-of-band QR payload encoding, ephemeral session handshake, and 6-digit SAS derivation.",
+  "updatedAt": "2026-08-22T23:27:11.600313100Z"
+}

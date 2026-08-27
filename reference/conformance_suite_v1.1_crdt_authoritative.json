@@ -1,0 +1,64 @@
+{
+    "version": "nex-protocol-v1.1-crdt-authoritative-final",
+    "description": "Final CRDT evaluations proving Mechanical Semantics, Object-Global Epoch Reset Boundaries, and Highly Adversarial Late-Arrivals.",
+    "vectors": [
+        {
+            "category": "Mechanical_Semantics",
+            "test_name": "Adversarial_Late_Arrival_Epoch_Wipes",
+            "description": "Late Epoch 0 Remove(K) evaluates behind Epoch 1 boundary and is annihilated. Subsequent R2 completely wipes Epoch 1.",
+            "inputs": {
+                "operations": [
+                    {
+                        "id": "A0",
+                        "type": "ADD",
+                        "key": "K",
+                        "payload": "A",
+                        "lamport": 1,
+                        "epoch": 0,
+                        "mutation_id": "820158201111111111111111111111111111111111111111111111111111111111111111",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "R1",
+                        "type": "RESURRECT",
+                        "lamport": 2,
+                        "epoch": 1,
+                        "mutation_id": "820158202222222222222222222222222222222222222222222222222222222222222222",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "A1",
+                        "type": "ADD",
+                        "key": "X",
+                        "payload": "B",
+                        "lamport": 3,
+                        "epoch": 1,
+                        "mutation_id": "820158203333333333333333333333333333333333333333333333333333333333333333",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "L0",
+                        "type": "REMOVE",
+                        "key": "K",
+                        "lamport": 4,
+                        "epoch": 0,
+                        "mutation_id": "820158204444444444444444444444444444444444444444444444444444444444444444",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "R2",
+                        "type": "RESURRECT",
+                        "lamport": 5,
+                        "epoch": 2,
+                        "mutation_id": "820158205555555555555555555555555555555555555555555555555555555555555555",
+                        "op_index": 0
+                    }
+                ]
+            },
+            "expected_state_projection": {
+                "AddsMap": {},
+                "TombstonesArr": []
+            }
+        }
+    ]
+}

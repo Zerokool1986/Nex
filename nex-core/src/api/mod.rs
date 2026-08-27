@@ -307,7 +307,7 @@ impl NexAppApi for NexCoreRuntime {
         // 2. Build Tombstone Mutation
         let parents = self.latest_mutation_id.map(|id| vec![id]).unwrap_or_default();
         let body = MutationBody {
-            author: self.identity.actor_id,
+            author: self.actor_id,
             parents,
             lamport: self.state_node.current_lamport + 1,
             epoch: self.current_epoch,

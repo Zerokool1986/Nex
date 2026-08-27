@@ -1,0 +1,4 @@
+{
+  "summary": "Physical Android mobile runtime test suite covering KeyStore TEE, optical QR scanning, Doze Mode throttling, foreground service CAS sync, cellular roaming, and autonomous boot restart.",
+  "updatedAt": "2026-08-21T04:20:04.987788400Z"
+}

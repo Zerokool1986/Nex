@@ -1,0 +1,91 @@
+{
+    "version": "nex-protocol-v0.5",
+    "vectors": [
+        {
+            "category": "Protocol",
+            "test_name": "AWORSet_Canonical_StateCommitment",
+            "description": "Hashes the exact CRDT wire structure of Adds and Tombstones (RFC 8949 Option A)",
+            "inputs": {
+                "adds": {
+                    "tag1": "ElementData"
+                },
+                "tombstones": [
+                    "tag_old"
+                ]
+            },
+            "expected_cbor_hex": "a26441646473a164746167316b456c656d656e74446174616a546f6d6273746f6e657381677461675f6f6c64",
+            "expected_hash_hex": "e4a3d6f1...",
+            "expected_sig_hex": null,
+            "expected_semantic_state": null,
+            "should_reject": false
+        },
+        {
+            "category": "CRDT",
+            "test_name": "Lamport_Clock_Resolution",
+            "description": "Validates that max(lamport_clock, MutationID) resolves concurrent scalar metadata edits",
+            "inputs": {
+                "lamport_a": 5,
+                "id_a": "0000...",
+                "val_a": "X",
+                "lamport_b": 5,
+                "id_b": "FFFF...",
+                "val_b": "Y"
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_sig_hex": null,
+            "expected_semantic_state": {
+                "winner": "Y",
+                "reason": "Lexicographic ID Tiebreaker"
+            },
+            "should_reject": false
+        },
+        {
+            "category": "Cryptography",
+            "test_name": "Hash_Lifecycle_Verify_Only",
+            "description": "Rejects a new GenesisRecord using an algorithm marked as VERIFY_ONLY",
+            "inputs": {
+                "algorithm_id": 99,
+                "lifecycle_state": "VERIFY_ONLY",
+                "target": "New GenesisRecord"
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_sig_hex": null,
+            "expected_semantic_state": null,
+            "should_reject": true
+        },
+        {
+            "category": "Authority",
+            "test_name": "Capability_Applicability_Intersection",
+            "description": "Rejects a mutation if the mathematically valid capability chain does not authorize the specific MutationType",
+            "inputs": {
+                "capability_permissions": [
+                    "Read"
+                ],
+                "mutation_type": "StateUpdate"
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_sig_hex": null,
+            "expected_semantic_state": null,
+            "should_reject": true
+        },
+        {
+            "category": "ResourceGovernance",
+            "test_name": "Sybil_Identity_Quota",
+            "description": "Validates that accounting is tied to IdentityObject, not connection count",
+            "inputs": {
+                "connections": 100,
+                "identity": "RootID_A",
+                "total_signatures_sent": 1001,
+                "limit": 1000
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_sig_hex": null,
+            "expected_semantic_state": null,
+            "should_reject": true
+        }
+    ]
+}

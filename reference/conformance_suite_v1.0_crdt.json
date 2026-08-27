@@ -1,0 +1,174 @@
+{
+    "version": "nex-protocol-v1.0-crdt",
+    "description": "CRDT DAG topological evaluations and strict Checkpoint semantics.",
+    "vectors": [
+        {
+            "category": "Topology",
+            "test_name": "Arrival_Permutation_Invariance",
+            "description": "Providing the causal DAG in any topological order must yield the identical state commitment.",
+            "inputs": {
+                "dag_permutation_1": [
+                    "X",
+                    "A",
+                    "C",
+                    "D",
+                    "B"
+                ],
+                "dag_permutation_2": [
+                    "X",
+                    "C",
+                    "A",
+                    "B",
+                    "D"
+                ]
+            },
+            "expected_state_commitment": "82015820997136f81acb4e8f930720bcddb4ad52d16561fac87575fac3786712c6c92b6b"
+        },
+        {
+            "category": "Checkpoint",
+            "test_name": "Frontier_Duplicate_Rejection",
+            "inputs": {
+                "frontier": [
+                    "82015820559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd",
+                    "82015820559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd"
+                ]
+            },
+            "expected_error": "INVALID_FRONTIER_REDUNDANT"
+        },
+        {
+            "category": "Checkpoint",
+            "test_name": "Frontier_Ordering_Rejection",
+            "inputs": {
+                "frontier": [
+                    "82015820df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c",
+                    "82015820559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd"
+                ]
+            },
+            "expected_error": "INVALID_FRONTIER_ORDER"
+        },
+        {
+            "category": "Checkpoint",
+            "test_name": "Frontier_Redundant_Member",
+            "inputs": {
+                "dag": [
+                    {
+                        "id": "G",
+                        "parents": []
+                    },
+                    {
+                        "id": "A",
+                        "parents": [
+                            "G"
+                        ]
+                    },
+                    {
+                        "id": "B",
+                        "parents": [
+                            "A"
+                        ]
+                    }
+                ],
+                "frontier": [
+                    "A",
+                    "B"
+                ]
+            },
+            "expected_error": "INVALID_FRONTIER_REDUNDANT"
+        },
+        {
+            "category": "Checkpoint",
+            "test_name": "Checkpoint_Traversal_Zero_State",
+            "description": "Checkpoints contribute zero operations to the resulting CRDT map.",
+            "inputs": {
+                "dag": [
+                    {
+                        "id": "G",
+                        "parents": [],
+                        "operations": {
+                            "op_G": "data"
+                        }
+                    },
+                    {
+                        "id": "A",
+                        "parents": [
+                            "G"
+                        ],
+                        "operations": {
+                            "op_A": "data"
+                        }
+                    },
+                    {
+                        "id": "CP1",
+                        "parents": [
+                            "A"
+                        ],
+                        "is_checkpoint": true
+                    },
+                    {
+                        "id": "B",
+                        "parents": [
+                            "CP1"
+                        ],
+                        "operations": {
+                            "op_B": "data"
+                        }
+                    },
+                    {
+                        "id": "CP2",
+                        "parents": [
+                            "B"
+                        ],
+                        "is_checkpoint": true
+                    }
+                ]
+            },
+            "expected_operations_in_state": [
+                "op_G",
+                "op_A",
+                "op_B"
+            ],
+            "unexpected_operations": [
+                "CP1"
+            ]
+        },
+        {
+            "category": "Topology",
+            "test_name": "Invalid_Ancestor_Through_Checkpoint",
+            "inputs": {
+                "dag": [
+                    {
+                        "id": "G",
+                        "parents": [],
+                        "validity": "VALID"
+                    },
+                    {
+                        "id": "A",
+                        "parents": [
+                            "G"
+                        ],
+                        "validity": "INVALID_SIGNATURE_ENVELOPE"
+                    },
+                    {
+                        "id": "CP1",
+                        "parents": [
+                            "A"
+                        ],
+                        "is_checkpoint": true,
+                        "validity": "PENDING"
+                    },
+                    {
+                        "id": "B",
+                        "parents": [
+                            "CP1"
+                        ],
+                        "validity": "PENDING"
+                    }
+                ]
+            },
+            "expected_evaluations": {
+                "CP1": "INVALID_DESCENDANT",
+                "B": "INVALID_DESCENDANT"
+            }
+        }
+    ]
+}

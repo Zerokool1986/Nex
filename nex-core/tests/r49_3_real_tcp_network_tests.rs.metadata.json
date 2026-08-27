@@ -1,0 +1,4 @@
+{
+  "summary": "Physical TCP network test suite covering real socket bind, bidirectional transmission, bulk CAS streaming, socket severance, corrupted wire frame defense, and concurrent client load.",
+  "updatedAt": "2026-08-21T04:16:20.910091800Z"
+}

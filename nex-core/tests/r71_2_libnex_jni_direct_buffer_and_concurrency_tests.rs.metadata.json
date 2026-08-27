@@ -1,0 +1,4 @@
+{
+  "summary": "Rewrite r71_2_libnex_jni_direct_buffer_and_concurrency_tests.rs to match jni_bridge.rs signatures.",
+  "updatedAt": "2026-08-22T20:07:50.552552600Z"
+}

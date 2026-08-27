@@ -1,0 +1,4 @@
+{
+  "summary": "Create identity/recovery/ceremony.rs implementing SocialRecoveryCeremony with time-locks, cancellation, and threshold reconstruction.",
+  "updatedAt": "2026-08-22T23:27:21.470020200Z"
+}

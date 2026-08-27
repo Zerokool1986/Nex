@@ -1,0 +1,4 @@
+{
+  "summary": "Create runtime/desktop.rs implementing DesktopHostCoordinator, DesktopLocalRpcBroker, DesktopKeyringBroker, and DesktopCapabilityGateway.",
+  "updatedAt": "2026-08-22T23:09:51.183608100Z"
+}

@@ -1,0 +1,107 @@
+{
+    "version": "nex-protocol-v1.1-crdt-full",
+    "description": "Comprehensive CRDT topological evaluations, OpTag derivation, LWW Add/Remove, and Epoch Resurrections.",
+    "vectors": [
+        {
+            "category": "State_Machine",
+            "test_name": "OpTag_Derivation",
+            "description": "Two independent implementations MUST derive identical OpTag bytes for the same operation.",
+            "inputs": {
+                "mutation_id": "820158201111111111111111111111111111111111111111111111111111111111111111",
+                "operation_index": 0,
+                "operation_body": {
+                    "1": "LogicalKey1",
+                    "2": "payload_data"
+                }
+            },
+            "expected_optag": "82015820d5198fc7267b7c7954e12c9c5daed7a86400c0f43fcff7ab54cf5764574e334b"
+        },
+        {
+            "category": "State_Machine",
+            "test_name": "Add_Remove_LWW_Conflict",
+            "inputs": {
+                "operations": [
+                    {
+                        "id": "A",
+                        "lamport": 1,
+                        "type": "ADD",
+                        "key": "Key1",
+                        "payload": "A_data",
+                        "mutation_id": "82015820AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    },
+                    {
+                        "id": "B",
+                        "lamport": 1,
+                        "type": "ADD",
+                        "key": "Key1",
+                        "payload": "B_data",
+                        "mutation_id": "82015820BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+                    },
+                    {
+                        "id": "C",
+                        "lamport": 2,
+                        "type": "REMOVE",
+                        "key": "Key1"
+                    },
+                    {
+                        "id": "D",
+                        "lamport": 3,
+                        "type": "ADD",
+                        "key": "Key1",
+                        "payload": "D_data"
+                    }
+                ]
+            },
+            "expected_state": {
+                "AddsMap": {},
+                "TombstonesArr": [
+                    "Key1"
+                ]
+            }
+        },
+        {
+            "category": "State_Machine",
+            "test_name": "Epoch_Resurrection",
+            "inputs": {
+                "operations": [
+                    {
+                        "id": "A",
+                        "epoch": 1,
+                        "lamport": 1,
+                        "type": "ADD",
+                        "key": "Key1",
+                        "payload": "A_data"
+                    },
+                    {
+                        "id": "B",
+                        "epoch": 1,
+                        "lamport": 2,
+                        "type": "REMOVE",
+                        "key": "Key1"
+                    },
+                    {
+                        "id": "C",
+                        "epoch": 2,
+                        "lamport": 3,
+                        "type": "RESURRECT",
+                        "key": "Key1"
+                    },
+                    {
+                        "id": "D",
+                        "epoch": 2,
+                        "lamport": 4,
+                        "type": "ADD",
+                        "key": "Key1",
+                        "payload": "D_data"
+                    }
+                ]
+            },
+            "expected_state": {
+                "AddsMap": {
+                    "Key1": "D_data"
+                },
+                "TombstonesArr": []
+            }
+        }
+    ]
+}

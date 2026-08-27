@@ -108,18 +108,54 @@ impl NexDesktopApp {
             peer_sync_success_count: 0,
         };
 
+        let mut ui = NexUiState::new();
+        let mut recovery_plan = None;
+        let mut recovery_shares = Vec::new();
+        let mut active_crl = BTreeSet::new();
+
+        if let Ok(tab_env) = std::env::var("NEX_START_TAB") {
+            if tab_env == "settings" {
+                ui.active_tab = crate::ui::NavTab::Settings;
+            } else if tab_env == "chat" {
+                ui.active_tab = crate::ui::NavTab::Chat;
+            }
+        }
+
+        if let Ok(rec_env) = std::env::var("NEX_RECOVERY_MODE") {
+            if rec_env == "setup_step0" {
+                ui.active_tab = crate::ui::NavTab::Settings;
+                ui.recovery_state.wizard_mode = crate::ui::recovery::RecoveryWizardMode::Setup;
+                ui.recovery_state.setup_step = 0;
+            } else if rec_env == "setup_step1" {
+                ui.active_tab = crate::ui::NavTab::Settings;
+                ui.recovery_state.wizard_mode = crate::ui::recovery::RecoveryWizardMode::Setup;
+                ui.recovery_state.setup_step = 1;
+            } else if rec_env == "lost_device" {
+                ui.active_tab = crate::ui::NavTab::Settings;
+                ui.recovery_state.wizard_mode = crate::ui::recovery::RecoveryWizardMode::RecoverLostDevice;
+            } else if rec_env == "active_plan" {
+                ui.active_tab = crate::ui::NavTab::Settings;
+                let seed = node.identity.signing_key.to_bytes();
+                if let Ok((plan, shares)) = nex_core::identity::recovery::device_recovery::DeviceRecoveryWorkflow::setup_3_of_5_recovery(&seed, 100, None, 100) {
+                    recovery_plan = Some(plan);
+                    recovery_shares = shares;
+                    active_crl.insert([0x11; 32]);
+                }
+            }
+        }
+
         Self {
             node,
             data_dir,
-            ui: NexUiState::new(),
+            ui,
             status,
             transport_server,
             beacon_service,
             network_telemetry,
             discovered_peers: Vec::new(),
-            recovery_plan: None,
-            recovery_shares: Vec::new(),
-            active_crl: BTreeSet::new(),
+            recovery_plan,
+            recovery_shares,
+            active_crl,
         }
     }
 

@@ -16,6 +16,10 @@
    1. Write snapshot to `state.db.tmp` and fsync.
    2. Atomic rename `state.db.tmp` $\to$ `state.db`.
    3. Truncate `wal.log` to the 8-byte header `NEXWAL01`.
+3. **Conflict Resolution & Materialized State Invariants:**
+   1. **LWW Precedence Tuple:** `(Epoch ASC, LamportRank ASC, MutationID ASC)`.
+   2. **Unified Materialized State Invariant:** All materialized projections (`object_store`, ViewModels, indices) must strictly derive from the causal LWW outcome and must never be updated independently.
+   3. **Losing Write Fate:** Preserved immutably in DAG and WAL; not exposed in UI.
 
 ---
 
@@ -26,6 +30,10 @@
   - `WriteAheadLog::open()` writes the 8-byte magic header `NEXW` + `[1, 0, 0, 0]`.
   - `WriteAheadLog::append_mutation()` prepends 4-byte big-endian record length and 1-byte record type `RECORD_MUTATION`, followed by CBOR/JSON payload, and appends a 4-byte CRC-32 checksum. Calls `file.sync_data()` on every commit.
   - `WriteAheadLog::recover()` reads valid records up to any crash cutoff or CRC mismatch, drops invalid tail bytes, and truncates `wal.log` back to the last valid commit offset.
+- In `nex-core/src/sync/anti_entropy.rs` & `nex-core/src/runtime/node.rs`:
+  - `AntiEntropyEngine::ingest_batch()` and `NexNode::start()` WAL replay inspect `crdt_state` following `ingest_mutation()` to ensure `object_store` is only updated when the arriving mutation is the winning causal entry.
+- In `nex-core/src/object/store.rs` & `nex-core/src/transport/socket.rs`:
+  - `NexObjectStore::insert()` enforces causal epoch/lamport versioning before overwriting any existing object in `object_store`.
 - In `nex-core/src/storage/state_db.rs`:
   - `StateDbEngine::save_snapshot()` writes `NEXS` (magic) + version `1` + CRC32 checksum + payload length + bincode snapshot, executes `sync_all()`, renames `state.db.tmp` to `state.db`, and executes a directory barrier `sync_all()`.
   - `StateDbEngine::compact_wal()` truncates `wal.log` and writes the 8-byte header.
@@ -38,7 +46,7 @@
   1. The "Disk First, Memory Second" durability invariant.
   2. The two-phase atomic snapshot sequence.
   3. Crash recovery semantics and WAL compaction rules.
+  4. Unified materialized state consistency across CRDT and ObjectStore layers.
 - **What NEX-02 Explicitly Does NOT Govern:**
   1. Network transport framing (governed by `NEX-04` and `NEX/WIRE/v1`).
-  2. CRDT state conflict resolution algorithms (governed by `NEX-01`).
-  3. Chunking algorithms for large binary assets (governed by FastCDC in `src/storage/cdc.rs`).
+  2. Chunking algorithms for large binary assets (governed by FastCDC in `src/storage/cdc.rs`).

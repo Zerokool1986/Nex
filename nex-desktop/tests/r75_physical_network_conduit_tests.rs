@@ -50,6 +50,9 @@ fn create_test_desktop_app(node_name: &str) -> (NexDesktopApp, tempfile::TempDir
         beacon_service,
         network_telemetry,
         discovered_peers: Vec::new(),
+        recovery_plan: None,
+        recovery_shares: Vec::new(),
+        active_crl: std::collections::BTreeSet::new(),
     };
 
     (app, tmp)

@@ -1,9 +1,13 @@
+use std::collections::BTreeSet;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use ed25519_dalek::SigningKey;
 use rand::RngCore;
 use rand::rngs::OsRng;
 
+use nex_core::identity::types::ActorID;
+use nex_core::identity::recovery::device_recovery::RecoveryPlan;
+use nex_core::identity::recovery::shamir::GuardianShare;
 use nex_core::runtime::node::NexNode;
 use nex_core::runtime::production::NodeOperationalState;
 use nex_core::transport::socket::{LanTcpTransportServer, LanTcpTransportClient};
@@ -30,6 +34,9 @@ pub struct NexDesktopApp {
     pub beacon_service: Option<LanBeaconService>,
     pub network_telemetry: NetworkTelemetry,
     pub discovered_peers: Vec<DiscoveredPeer>,
+    pub recovery_plan: Option<RecoveryPlan>,
+    pub recovery_shares: Vec<GuardianShare>,
+    pub active_crl: BTreeSet<ActorID>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,6 +56,9 @@ impl NexDesktopApp {
             beacon_service: None,
             network_telemetry: NetworkTelemetry::default(),
             discovered_peers: Vec::new(),
+            recovery_plan: None,
+            recovery_shares: Vec::new(),
+            active_crl: BTreeSet::new(),
         }
     }
 
@@ -107,6 +117,9 @@ impl NexDesktopApp {
             beacon_service,
             network_telemetry,
             discovered_peers: Vec::new(),
+            recovery_plan: None,
+            recovery_shares: Vec::new(),
+            active_crl: BTreeSet::new(),
         }
     }
 

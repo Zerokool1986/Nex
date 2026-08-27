@@ -11,6 +11,7 @@ pub mod settings;
 pub mod actions;
 pub mod palette_command;
 pub mod chat;
+pub mod recovery;
 
 use egui::{Context, SidePanel, TopBottomPanel, CentralPanel, Frame, Color32, Stroke, Vec2, RichText};
 use nex_core::runtime::experience::InterfaceComplexity;
@@ -56,6 +57,8 @@ pub struct NexUiState {
     pub network_state: network::NetworkViewState,
     /// Ephemeral view state for Comms Chat
     pub chat_state: chat::ChatViewState,
+    /// Sovereign Recovery UI State
+    pub recovery_state: recovery::RecoveryUiState,
     /// Sovereign Actions & Dialog State
     pub action_state: actions::ActionState,
     /// Global Command Palette / Spotlight Launcher state
@@ -80,6 +83,7 @@ impl NexUiState {
             devices_state: devices::DevicesViewState::new(),
             network_state: network::NetworkViewState::new(),
             chat_state: chat::ChatViewState::new(),
+            recovery_state: recovery::RecoveryUiState::new(),
             action_state: actions::ActionState::new(),
             command_palette_open: false,
             command_palette_query: String::new(),
@@ -387,6 +391,9 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
     let mut palette_state = app.ui.command_palette_state.clone();
     palette_command::render_command_palette(ctx, app, &mut palette_state);
     app.ui.command_palette_state = palette_state;
+
+    // Sovereign Recovery Modals (Setup & Lost-Device Restoration)
+    recovery::render_recovery_modals(ctx, app);
 }
 
 fn section_header(ui: &mut egui::Ui, label: &str) {

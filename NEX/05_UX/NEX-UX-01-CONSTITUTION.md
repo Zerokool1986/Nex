@@ -92,7 +92,7 @@ Instead of locking users into permanent account categories, NEX provides a dynam
 │     controls, device status, and storage quotas.            │
 │                                                             │
 │ ( ) 🟡 ADVANCED                                             │
-│     Exposes detailed synchronization queues, offline outbox,│
+│     Exposes detailed synchronization queues, offline outbox,|
 │     mesh transport preferences, and granular capabilities.  │
 │                                                             │
 │ ( ) 🟣 EXPERT                                               │

@@ -15,6 +15,7 @@ fn test_r28_f03_deep_1000_dependency_chain_iterative_releasing() {
         parents: vec![],
         lamport: 0,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [0u8; 32], value: vec![0] },
     };
@@ -30,6 +31,7 @@ fn test_r28_f03_deep_1000_dependency_chain_iterative_releasing() {
             parents: vec![prev_id],
             lamport: i,
             epoch: 0,
+            author: [0u8; 32],
             is_resurrect: false,
             payload: CrdtPayload::AddLWW { id: obj_id, value: i.to_le_bytes().to_vec() },
         };

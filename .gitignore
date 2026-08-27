@@ -1,0 +1,20 @@
+﻿# Build targets
+target/
+target_arm64/
+target_x86_64/
+**/*.rs.bk
+
+# Local Runtime & Test Databases
+nex_desktop_data/
+test_data*/
+test_captures/
+*.log
+*.tmp
+__pycache__/
+*.pyc
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

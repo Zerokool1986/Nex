@@ -2,8 +2,9 @@ use std::collections::BTreeMap;
 use sha2::{Sha256, Digest};
 use super::types::RegisterState;
 use crate::HashRef;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CrdtStateMap {
     pub adds_map: BTreeMap<Vec<u8>, (HashRef, Vec<u8>)>,
     pub tombstones_arr: Vec<HashRef>,
@@ -25,7 +26,7 @@ pub fn project(register_state: &BTreeMap<Vec<u8>, RegisterState>) -> CrdtStateMa
     }
     
     tombstones_arr.sort();
-    tombstones_arr.dedup(); // Ensure uniqueness if necessary, though operations might be unique
+    tombstones_arr.dedup();
     
     CrdtStateMap {
         adds_map,
@@ -34,15 +35,15 @@ pub fn project(register_state: &BTreeMap<Vec<u8>, RegisterState>) -> CrdtStateMa
 }
 
 pub fn compute_state_commitment(state_map: &CrdtStateMap) -> HashRef {
-    let mut cbor_bytes = Vec::new();
-    ciborium::into_writer(state_map, &mut cbor_bytes).expect("Failed to serialize StateEncoding");
+    let bytes = bincode::serialize(state_map).expect("Failed to serialize StateEncoding");
 
     let mut hasher = Sha256::new();
     hasher.update(b"NEX/STATE_COMMITMENT/v1");
-    hasher.update(&cbor_bytes);
+    hasher.update(&bytes);
     
     HashRef {
         algorithm_id: 1,
         digest: hasher.finalize().to_vec(),
     }
 }
+

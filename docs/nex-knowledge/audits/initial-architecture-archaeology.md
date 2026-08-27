@@ -25,7 +25,8 @@ The repository exhibits a clearly tiered architecture:
      - `src/identity/`: Ed25519 ActorID derivation, CapabilityProof token verification, Shamir GF(256) social recovery.
      - `src/sync/`: 5-phase SMT anti-entropy sync engine (`anti_entropy.rs`), durable offline outbox (`outbox.rs`).
      - `src/transport/`: Pluggable transport adapters (`TcpTransportAdapter`, `ReticulumNativeAdapter`, `LanTcpTransportServer`).
-     - `src/api/`: `NexAppApi` trait, `NexCoreRuntime`, `NexObjectStore`.\n     - `src/ffi/` & `src/ipc/`: C ABI v1, JNI DirectByteBuffer bridge, JSON-RPC 2.0 dispatcher.
+     - `src/api/`: `NexAppApi` trait, `NexCoreRuntime`, `NexObjectStore`.
+     - `src/ffi/` & `src/ipc/`: C ABI v1, JNI DirectByteBuffer bridge, JSON-RPC 2.0 dispatcher.
 3. **Desktop Host Application (`nex-desktop/`):**
    - Native Rust GUI using `egui`/`eframe`. Implements Home Shell, Drive, Photos, People, Inspector, and the 4-step Experience Slider.
 4. **Android Mobile Host Application (`android/`):**

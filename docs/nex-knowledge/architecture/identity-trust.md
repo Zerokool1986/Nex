@@ -77,7 +77,9 @@ pub struct CapabilityProof {
 
 ---
 
-## 4. Capability Chain Verification (`verify_capability_chain`)\n\n`[IMPLEMENTATION OBSERVATION]`
+## 4. Capability Chain Verification (`verify_capability_chain`)
+
+`[IMPLEMENTATION OBSERVATION]`
 In `nex-core/src/identity/verifier.rs`:
 Verification strictly enforces:
 1. **Signature Validity:** Ed25519 signature over canonical token hash `SHA256("NEX/CAPABILITY_TOKEN/v1" || canonical_bytes)`.

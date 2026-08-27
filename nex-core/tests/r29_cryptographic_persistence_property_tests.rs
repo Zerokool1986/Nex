@@ -188,6 +188,7 @@ fn test_r29_b_four_crash_point_durability_suite() {
         parents: vec![],
         lamport: 0,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [0x01; 32], value: b"pre_wal".to_vec() },
     };
@@ -216,6 +217,7 @@ fn test_r29_b_four_crash_point_durability_suite() {
         parents: vec![m1.id],
         lamport: 1,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [0x02; 32], value: b"mid_apply".to_vec() },
     };

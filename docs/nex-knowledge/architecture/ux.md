@@ -43,7 +43,8 @@
 +----------------------------+-----------------------------------------------------------------------+
 | 3. WHAT DO YOU WANT TO SEE?| INTERFACE COMPLEXITY & UX EXPERIENCE LEVEL                            |
 |                            | Presentation Filter (Simple, Standard, Advanced, Expert).             |
-+====================================================================================================+\n```
++====================================================================================================+
+```
 
 > [!IMPORTANT]
 > **Constitutional Invariant:** Never conflate authorization with interface complexity. The Experience Level controls presentation density only and never modifies cryptographic authority.

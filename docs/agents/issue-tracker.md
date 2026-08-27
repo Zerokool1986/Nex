@@ -6,7 +6,7 @@ Issues and specs for this repository live as GitHub issues, managed via the GitH
 - **Tracker**: GitHub Issues
 - **Tooling**: GitHub MCP / `gh` CLI
 - **Remote**: Inferred from `git remote -v` (when remote is configured) or managed via GitHub MCP.
-- **Local Fallback**: If operating in an offline environment without git remote, tickets may temporarily be tracked under `.scratch/<feature>/`..
+- **Local Fallback**: If operating in an offline environment without git remote, tickets may temporarily be tracked under `.scratch/<feature>/`.
 
 ## Conventions
 - **Create an issue**: `gh issue create --title "..." --body "..."`

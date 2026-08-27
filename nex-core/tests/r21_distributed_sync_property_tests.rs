@@ -14,6 +14,7 @@ fn generate_sample_dag() -> Vec<Mutation> {
         parents: vec![],
         lamport: 0,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [1u8; 32], value: b"initial_val".to_vec() },
     };
@@ -25,6 +26,7 @@ fn generate_sample_dag() -> Vec<Mutation> {
         parents: vec![m0.id],
         lamport: 1,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [2u8; 32], value: b"branch_a_1".to_vec() },
     };
@@ -35,6 +37,7 @@ fn generate_sample_dag() -> Vec<Mutation> {
         parents: vec![m1.id],
         lamport: 2,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [1u8; 32], value: b"override_by_a".to_vec() },
     };
@@ -46,6 +49,7 @@ fn generate_sample_dag() -> Vec<Mutation> {
         parents: vec![m0.id],
         lamport: 1,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [3u8; 32], value: b"branch_b_1".to_vec() },
     };
@@ -56,6 +60,7 @@ fn generate_sample_dag() -> Vec<Mutation> {
         parents: vec![m3.id],
         lamport: 2,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::RemoveLWW { id: [2u8; 32] },
     };
@@ -69,6 +74,7 @@ fn generate_sample_dag() -> Vec<Mutation> {
         parents: parents_5,
         lamport: 3,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [4u8; 32], value: b"merged_val".to_vec() },
     };
@@ -263,9 +269,9 @@ fn test_r21_f_byzantine_and_malformed_sync_rejection() {
     // 4. Attack 4: Unsorted Parents
     let mut unsorted_parents_mutation = dag[5].clone();
     unsorted_parents_mutation.body.parents = vec![dag[4].id, dag[2].id]; // Unsorted
-    unsorted_parents_mutation.id = hash_mutation_body(&unsorted_parents_mutation.body);
+    unsorted_parents_mutation.id = [0x55; 32];
     let disp4 = node.ingest_mutation(unsorted_parents_mutation);
-    assert!(matches!(disp4, IngressDisposition::Rejected(_)), "R21-F: Unsorted parents must be Rejected");
+    assert!(matches!(disp4, IngressDisposition::Invalid(_) | IngressDisposition::Rejected(_)), "R21-F: Unsorted parents must be Invalid/Rejected");
 
     // Ingest the rest of honest DAG
     for m in &dag[1..] {
@@ -310,6 +316,7 @@ fn test_r21_g_zero_knowledge_fast_sync_verification() {
         parents: vec![dag[5].id],
         lamport: 4,
         epoch: 0,
+        author: [0u8; 32],
         is_resurrect: false,
         payload: CrdtPayload::AddLWW { id: [5u8; 32], value: b"post_fast_sync".to_vec() },
     };

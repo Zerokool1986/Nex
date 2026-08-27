@@ -13,7 +13,7 @@ To prevent fragmented app sprawl and cognitive overload, NEX organizes its user-
 │     Chat • Voice • Video             │     Files • Sync • Sharing           │
 │     Mail • People / Contacts         │     Offline Access • CAS Deduplication│
 ├──────────────────────────────────────┼──────────────────────────────────────┤
-│  📷 NEX PHOTOS                       │  🗺️ NEX MAPS                         │
+│  📷 NEX PHOTOS                       │  🗺 NEX MAPS                         │
 │     Photos • Memories • Albums       │     Offline Vector Maps • Navigation │
 │     Video Org • Local ML Search      │     Private Track Logs • Waypoints   │
 ├──────────────────────────────────────┼──────────────────────────────────────┤
@@ -21,7 +21,7 @@ To prevent fragmented app sprawl and cognitive overload, NEX organizes its user-
 │     Personal Media Server • Music    │     Tasks • Calendar • Notes         │
 │     Movies • P2P Device Streaming    │     Office • Projects                │
 ├──────────────────────────────────────┼──────────────────────────────────────┤
-│  🤖 NEX AI                           │  ⚙️ NEX AUTOMATION (IoT)             │
+│  🤖 NEX AI                           │  ⚙ NEX AUTOMATION (IoT)             │
 │     Local / Private Intelligence     │     Event-Driven Workflows           │
 │     Capability-Secured Assistant     │     Smart Home • Device Sensors      │
 ├──────────────────────────────────────┼──────────────────────────────────────┤
@@ -33,7 +33,7 @@ To prevent fragmented app sprawl and cognitive overload, NEX organizes its user-
 │     Sovereign Web Gateway (127.0.0.1)│     App Discovery • Permissions      │
 │     WebRTC Bridge • Sandboxed Apps   │     Sandboxed Runtime • Updates      │
 ├──────────────────────────────────────┼──────────────────────────────────────┤
-│  💳 NEX ECONOMICS                    │  🛠️ NEX DEVELOPER                    │
+│  💳 NEX ECONOMICS                    │  🛠 NEX DEVELOPER                    │
 │     Payment-Rail Agnostic Commerce   │     First-Party Tooling & SDKs       │
 │     Resource Contribution Markets    │     Local Simulators • Manifests     │
 └──────────────────────────────────────┴──────────────────────────────────────┘

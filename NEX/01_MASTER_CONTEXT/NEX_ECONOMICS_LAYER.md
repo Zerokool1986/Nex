@@ -2,7 +2,7 @@
 
 ## 1. Core Architectural Principle
 
-> **\"NEX does not mandate a single currency, token, bank, or payment processor. NEX defines the sovereign economic contract and representation layer, while allowing users and developers to connect whatever payment rails and infrastructure providers they choose.\"**
+> **"NEX does not mandate a single currency, token, bank, or payment processor. NEX defines the sovereign economic contract and representation layer, while allowing users and developers to connect whatever payment rails and infrastructure providers they choose."**
 
 ```text
                          NEX PLATFORM CORE

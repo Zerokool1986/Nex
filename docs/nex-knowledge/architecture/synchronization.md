@@ -13,17 +13,17 @@ In `nex-core/src/sync/anti_entropy.rs`, nodes reconcile divergent causal histori
 ```text
 Node A (Initiator)                               Node B (Responder)
         │                                                │
-        ├─── 1. SyncAdvertise (Frontier, SMT Root) ─────▶│
+        │─── 1. SyncAdvertise (Frontier, SMT Root) ─────▶│
         │                                                │
-        │◀─── 2. SyncDeltaRequest (Missing Mutation IDs) ─│
+        │◀── 2. SyncDeltaRequest (Missing Mutation IDs) ─│
         │                                                │
-        ├─── 3. SyncStreamBatch (Sorted Mutations) ─────▶│
+        │─── 3. SyncStreamBatch (Sorted Mutations) ─────▶│
         │                                                │
-        │◀─── 4. SyncBatchAck (Ingested Count, Window) ───│
+        │◀── 4. SyncBatchAck (Ingested Count, Window) ───│
         │                                                │
-        ├─── 5. SyncComplete (Final State Commitment) ──▶│
+        │─── 5. SyncComplete (Final State Commitment) ──▶│
         │                                                │
-        │◀─── Verification (Roots Match == Converged) ───▶│
+        │◀── Verification (Roots Match == Converged) ───▶│
 ```
 
 ---

@@ -92,8 +92,8 @@ Every capability in the NEX ecosystem is formally classified along the **10-leve
 
 ### Dimension 6: Truthful State Presentation Audit
 - **Strict Compliance:** The application model **never** reports "Synced" unless `target_frontier == local_frontier` and Merkle roots match.
-- **Offline Integrity:** When offline, status badge explicitly says *\"You're offline. Changes will sync automatically when you're connected.\"*
-- **Replication Truth:** Displays *\"2 Replicas\"* only when proof of receipt is acknowledged by peer node.
+- **Offline Integrity:** When offline, status badge explicitly says *"You're offline. Changes will sync automatically when you're connected."*
+- **Replication Truth:** Displays *"2 Replicas"* only when proof of receipt is acknowledged by peer node.
 
 ---
 
@@ -125,7 +125,7 @@ Transform the L3 product models into an **L4 / L5 interactive application** that
 [NEX Home View] ──(Select Family Space)──▶ [Photos / Drive Lens]
        │                                           │
        │                                           ▼
-[Person Panel: Amy] ◀───(Inspect Object)─── [Universal Inspector]
+[Person Panel: Amy] ◀──(Inspect Object)─── [Universal Inspector]
        │                                           │
        ▼                                           ▼
 [Device Panel: Desktop] ──(Physical Mesh)──▶ [Real Anti-Entropy Sync]

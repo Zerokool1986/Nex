@@ -17,7 +17,9 @@ fn test_r35_a_drive_object_semantics_and_metadata() {
     let file_content = b"HELLO_NEX_SOVEREIGN_DRIVE_V1";
     let obj_id = drive.upload_file("/docs/manifesto.txt", "text/plain", file_content, None).unwrap();
 
-    let (inode, downloaded) = drive.download_file(&obj_id).unwrap();
+    let downloaded = drive.download_file(&obj_id).unwrap();
+    let obj = drive.api.read_object(&obj_id).unwrap();
+    let inode: nex_core::apps::drive::DriveInode = serde_json::from_slice(&obj.payload_bytes).unwrap();
     assert_eq!(inode.name, "manifesto.txt");
     assert_eq!(inode.size_bytes, file_content.len() as u64);
     assert_eq!(downloaded, file_content);

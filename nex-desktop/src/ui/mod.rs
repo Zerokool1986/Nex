@@ -401,10 +401,11 @@ fn render_command_palette(ctx: &Context, app: &mut NexDesktopApp) {
 
             // 1. Actions
             let actions = [
-                ("Import File into Space", egui_phosphor::regular::PLUS, "Action", "Add files to local storage"),
-                ("Pair Device via SAS QR", egui_phosphor::regular::QR_CODE, "Action", "Secure proximity pairing"),
-                ("Backup 12-Word Master Seed", egui_phosphor::regular::KEY, "Action", "Export sovereign identity"),
-                ("Clean CAS Storage (GC)", egui_phosphor::regular::BROOM, "Action", "Prune unreferenced chunks"),
+                ("Import File into Personal", egui_phosphor::regular::PLUS, "Personal", "Add files to private local storage"),
+                ("Place File in Family Space", egui_phosphor::regular::PLUS, "Family", "Share document with family circle"),
+                ("Pair Family Member via SAS QR", egui_phosphor::regular::QR_CODE, "Family", "Secure proximity pairing ceremony"),
+                ("Backup 12-Word Master Seed", egui_phosphor::regular::KEY, "Security", "Export sovereign root keys"),
+                ("Clean CAS Storage (GC)", egui_phosphor::regular::BROOM, "Storage", "Prune unreferenced chunks"),
             ];
 
             for (name, icon, cat, desc) in actions {
@@ -426,10 +427,19 @@ fn render_command_palette(ctx: &Context, app: &mut NexDesktopApp) {
                         palette::ACCENT,
                     );
                     if response.clicked() {
-                        if name.contains("Import") {
+                        if name.contains("Personal") || name.contains("Family Space") {
                             app.ui.active_tab = NavTab::Drive;
                         } else if name.contains("Pair") {
-                            app.ui.active_tab = NavTab::Devices;
+                            app.ui.action_state.active_dialog = Some(crate::ui::actions::ActionDialog::ProximitySasVerification {
+                                peer_name: "Amy's Pixel 9".to_string(),
+                                actor_id: [0x55; 32],
+                                safety_words: [
+                                    "RIVER".to_string(),
+                                    "SUMMIT".to_string(),
+                                    "FALCON".to_string(),
+                                    "HARBOR".to_string(),
+                                ],
+                            });
                         } else {
                             app.ui.active_tab = NavTab::Settings;
                         }

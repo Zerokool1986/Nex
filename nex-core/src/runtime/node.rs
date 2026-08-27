@@ -202,6 +202,14 @@ impl NexNode {
                     if let Some(winning_mutation) = self.state.state_node.dag.get(winning_id) {
                         match &winning_mutation.body.payload {
                             CrdtPayload::AddLWW { id, value } => {
+                                if value.len() == 32 {
+                                    let mut blocked_actor = [0u8; 32];
+                                    blocked_actor.copy_from_slice(value);
+                                    if *id == crate::identity::blocklist::derive_block_record_id(&self.identity.actor_id, &blocked_actor) {
+                                        self.identity.blocklist.block_actor(blocked_actor);
+                                    }
+                                }
+
                                 if let Some(obj) = self.state.object_store.get_mut(id) {
                                     obj.payload_bytes = value.clone();
                                     obj.created_epoch = *epoch;
@@ -226,6 +234,13 @@ impl NexNode {
                                 }
                             }
                             CrdtPayload::Tombstone { id } | CrdtPayload::RemoveLWW { id } => {
+                                for blocked_actor in self.identity.blocklist.list_blocked() {
+                                    if *id == crate::identity::blocklist::derive_block_record_id(&self.identity.actor_id, &blocked_actor) {
+                                        self.identity.blocklist.unblock_actor(&blocked_actor);
+                                        break;
+                                    }
+                                }
+
                                 if let Some(obj) = self.state.object_store.get_mut(id) {
                                     obj.tombstoned = true;
                                     obj.created_epoch = *epoch;
@@ -302,15 +317,55 @@ impl NexNode {
     }
 
     pub fn block_actor(&mut self, actor: ActorID) -> bool {
-        self.identity.blocklist.block_actor(actor)
+        let changed = self.identity.blocklist.block_actor(actor);
+        if changed {
+            let block_id = crate::identity::blocklist::derive_block_record_id(&self.identity.actor_id, &actor);
+            let parents = self.state.latest_mutation_id.map(|id| vec![id]).unwrap_or_default();
+            let lamport = if parents.is_empty() { 0 } else { self.state.state_node.current_lamport + 1 };
+            let body = MutationBody {
+                author: self.identity.actor_id,
+                parents,
+                lamport,
+                epoch: self.state.current_epoch,
+                is_resurrect: false,
+                payload: CrdtPayload::AddLWW { id: block_id, value: actor.to_vec() },
+            };
+            let _ = self.execute_mutation(body);
+        }
+        changed
     }
 
     pub fn unblock_actor(&mut self, actor: &ActorID) -> bool {
-        self.identity.blocklist.unblock_actor(actor)
+        let changed = self.identity.blocklist.unblock_actor(actor);
+        if changed {
+            let block_id = crate::identity::blocklist::derive_block_record_id(&self.identity.actor_id, actor);
+            let parents = self.state.latest_mutation_id.map(|id| vec![id]).unwrap_or_default();
+            let lamport = if parents.is_empty() { 0 } else { self.state.state_node.current_lamport + 1 };
+            let body = MutationBody {
+                author: self.identity.actor_id,
+                parents,
+                lamport,
+                epoch: self.state.current_epoch,
+                is_resurrect: false,
+                payload: CrdtPayload::Tombstone { id: block_id },
+            };
+            let _ = self.execute_mutation(body);
+        }
+        changed
     }
 
     pub fn is_actor_blocked(&self, actor: &ActorID) -> bool {
         self.identity.blocklist.is_blocked(actor)
+    }
+
+    pub fn ingest_remote_mutation(&mut self, mutation: Mutation) -> IngressDisposition {
+        // Enforce PersonalBlocklist at the node ingress boundary
+        if self.is_actor_blocked(&mutation.body.author) {
+            return IngressDisposition::Rejected("Author is locally blocked".into());
+        }
+
+        let (disp, _admitted) = self.state.state_node.ingest_mutation_with_admissions(mutation);
+        disp
     }
 
     pub fn execute_mutation(&mut self, body: MutationBody) -> Result<[u8; 32], CoreRuntimeError> {

@@ -129,18 +129,68 @@ impl NexCoreRuntime {
     pub fn new(signing_key: SigningKey, wal_path: Option<PathBuf>) -> Self {
         let pubkey_bytes = signing_key.verifying_key().to_bytes().to_vec();
         let actor_id = derive_actor_id(KeyType::Ed25519, &pubkey_bytes);
+
+        let mut object_store = NexObjectStore::new();
+        let mut state_node = VirtualNode::new("NexCoreRuntimeNode");
+        let mut latest_mutation_id = None;
+
+        if let Some(p) = &wal_path {
+            if let Ok(mutations) = WriteAheadLog::recover(p) {
+                for m in mutations {
+                    let (_disp, admitted) = state_node.ingest_mutation_with_admissions(m.clone());
+                    latest_mutation_id = Some(m.id);
+                    if !admitted.is_empty() {
+                        match &m.body.payload {
+                            CrdtPayload::AddLWW { id, value } => {
+                                let mut metadata = BTreeMap::new();
+                                if let Ok((comm_id, banned_actor, banned_by, epoch)) = serde_json::from_slice::<(ObjectID, ActorID, ActorID, u64)>(value) {
+                                    metadata.insert("community_id".to_string(), hex::encode(comm_id));
+                                    metadata.insert("banned_actor".to_string(), hex::encode(banned_actor));
+                                    metadata.insert("banned_by".to_string(), hex::encode(banned_by));
+                                    metadata.insert("epoch".to_string(), epoch.to_string());
+                                }
+                                let obj = NexObject {
+                                    object_id: *id,
+                                    object_type: ObjectType::Community,
+                                    namespace: [0u8; 32],
+                                    owner_actor_id: m.body.author,
+                                    schema_version: 1,
+                                    created_epoch: m.body.epoch,
+                                    created_lamport: m.body.lamport,
+                                    winning_mutation_id: m.id,
+                                    metadata,
+                                    payload_bytes: value.clone(),
+                                    tombstoned: false,
+                                };
+                                object_store.insert(obj);
+                            }
+                            CrdtPayload::Tombstone { id } | CrdtPayload::RemoveLWW { id } => {
+                                if let Some(mut obj) = object_store.get(id).cloned() {
+                                    obj.tombstoned = true;
+                                    obj.created_epoch = m.body.epoch;
+                                    obj.created_lamport = m.body.lamport;
+                                    obj.winning_mutation_id = m.id;
+                                    object_store.insert(obj);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         let wal = wal_path.and_then(|p| WriteAheadLog::open(p).ok());
 
         Self {
             actor_id,
             signing_key,
             pubkey_bytes,
-            object_store: NexObjectStore::new(),
-            state_node: VirtualNode::new("NexCoreRuntimeNode"),
+            object_store,
+            state_node,
             active_revocations: BTreeMap::new(),
             wal,
             current_epoch: 0,
-            latest_mutation_id: None,
+            latest_mutation_id,
         }
     }
 

@@ -1,6 +1,18 @@
 use std::collections::BTreeSet;
 use serde::{Deserialize, Serialize};
+use sha2::{Sha256, Digest};
 use crate::identity::types::ActorID;
+
+pub const DOMAIN_PERSONAL_BLOCK: &[u8] = b"NEX/PERSONAL/BLOCK/v1";
+
+/// Derives a deterministic ObjectID for a personal block record in canonical state.
+pub fn derive_block_record_id(local_actor: &ActorID, blocked_actor: &ActorID) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(DOMAIN_PERSONAL_BLOCK);
+    hasher.update(local_actor);
+    hasher.update(blocked_actor);
+    hasher.finalize().into()
+}
 
 /// Local, sovereign blocklist maintained strictly on the user's local node.
 /// Decoupled from global identity, community governance, and external network gossip.

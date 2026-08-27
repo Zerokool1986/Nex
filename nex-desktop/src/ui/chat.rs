@@ -126,6 +126,11 @@ pub fn derive_channel_messages(app: &NexDesktopApp, channel_id: ObjectID) -> Vec
     // 1. Scan ObjectStore for matching ChatMessage objects
     for (msg_id, obj) in &app.node.state.object_store {
         if obj.object_type == ObjectType::ChatMessage && !obj.tombstoned {
+            // Filter out messages from locally blocked authors
+            if app.node.is_actor_blocked(&obj.owner_actor_id) {
+                continue;
+            }
+
             let msg_chan = obj.metadata.get("channel_id").and_then(|s| hex::decode(s).ok());
             if let Some(chan_bytes) = msg_chan {
                 if chan_bytes.as_slice() == channel_id {

@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use sha2::{Sha256, Digest};
 use serde::{Deserialize, Serialize};
-use crate::object::types::{ObjectID, NamespaceID, ObjectType};
+use crate::object::types::{ObjectID, NamespaceID, ObjectType, NexObject};
 use crate::api::NexAppApi;
 use crate::identity::types::{ActorID, CapabilityProof, OP_OBJECT_TOMBSTONE};
 use crate::model::{Mutation, MutationBody, CrdtPayload};
@@ -143,6 +143,17 @@ pub struct NexCommunityEngine<A: NexAppApi> {
     pub roles: BTreeMap<ObjectID, BTreeMap<ActorID, CommunityRole>>,
     pub reactions: BTreeMap<ObjectID, BTreeMap<String, BTreeSet<ActorID>>>,
     pub banned_actors: BTreeMap<ObjectID, BTreeSet<ActorID>>,
+    pub ban_objects: BTreeMap<(ObjectID, ActorID), ObjectID>,
+}
+
+pub const DOMAIN_COMMUNITY_BAN: &[u8] = b"NEX/COMMUNITY/BAN/v1";
+
+pub fn derive_ban_record_id(community_id: &ObjectID, target_actor: &ActorID) -> ObjectID {
+    let mut hasher = Sha256::new();
+    hasher.update(DOMAIN_COMMUNITY_BAN);
+    hasher.update(community_id);
+    hasher.update(target_actor);
+    hasher.finalize().into()
 }
 
 impl<A: NexAppApi> NexCommunityEngine<A> {
@@ -157,6 +168,7 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
             roles: BTreeMap::new(),
             reactions: BTreeMap::new(),
             banned_actors: BTreeMap::new(),
+            ban_objects: BTreeMap::new(),
         }
     }
 
@@ -170,8 +182,8 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
         &mut self,
         community_id: ObjectID,
         target_actor: ActorID,
-        _epoch: u64,
-    ) -> Result<(), String> {
+        epoch: u64,
+    ) -> Result<ObjectID, String> {
         let caller_role = self.get_role(&community_id, &self.local_actor_id);
         if caller_role < CommunityRole::Admin {
             return Err("Unauthorized: Must be at least Admin to ban members".into());
@@ -184,17 +196,36 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
             return Err("InvalidOperation: Cannot ban oneself".into());
         }
 
-        // 1. Remove from active roles
+        // 1. Remove from active roles in memory
         if let Some(comm_roles) = self.roles.get_mut(&community_id) {
             comm_roles.remove(&target_actor);
         }
 
-        // 2. Insert into banned_actors
+        // 2. Insert into banned_actors in memory
         self.banned_actors.entry(community_id)
             .or_default()
             .insert(target_actor);
 
-        Ok(())
+        // 3. Emit canonical object / mutation into the DAG and WAL
+        let ban_payload = serde_json::to_vec(&(community_id, target_actor, self.local_actor_id, epoch))
+            .map_err(|e| e.to_string())?;
+        let metadata = BTreeMap::from([
+            ("community_id".to_string(), hex::encode(community_id)),
+            ("banned_actor".to_string(), hex::encode(target_actor)),
+            ("banned_by".to_string(), hex::encode(self.local_actor_id)),
+            ("epoch".to_string(), epoch.to_string()),
+        ]);
+
+        let comm_namespace = community_id;
+        let ban_obj_id = self.api.create_object(
+            comm_namespace,
+            ObjectType::Community,
+            metadata,
+            ban_payload,
+        ).map_err(|e| format!("{:?}", e))?;
+
+        self.ban_objects.insert((community_id, target_actor), ban_obj_id);
+        Ok(ban_obj_id)
     }
 
     pub fn unban_member(
@@ -212,7 +243,36 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
             bans.remove(&target_actor);
         }
 
+        if let Some(ban_obj_id) = self.ban_objects.remove(&(community_id, target_actor)) {
+            let _ = self.api.delete_object(ban_obj_id, None);
+        }
+
         Ok(())
+    }
+
+    pub fn rebuild_moderation_from_objects(&mut self, objects: &[NexObject]) {
+        for obj in objects {
+            if let (Some(comm_hex), Some(banned_hex)) = (obj.metadata.get("community_id"), obj.metadata.get("banned_actor")) {
+                if let (Ok(comm_bytes), Ok(banned_bytes)) = (hex::decode(comm_hex), hex::decode(banned_hex)) {
+                    if comm_bytes.len() == 32 && banned_bytes.len() == 32 {
+                        let mut comm_id = [0u8; 32];
+                        let mut banned_id = [0u8; 32];
+                        comm_id.copy_from_slice(&comm_bytes);
+                        banned_id.copy_from_slice(&banned_bytes);
+
+                        if obj.tombstoned {
+                            if let Some(bans) = self.banned_actors.get_mut(&comm_id) {
+                                bans.remove(&banned_id);
+                            }
+                            self.ban_objects.remove(&(comm_id, banned_id));
+                        } else {
+                            self.banned_actors.entry(comm_id).or_default().insert(banned_id);
+                            self.ban_objects.insert((comm_id, banned_id), obj.object_id);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pub fn assign_role(

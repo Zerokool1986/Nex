@@ -60,6 +60,7 @@ pub struct IdentityEngine {
     pub pubkey_bytes: Vec<u8>,
     pub actor_id: ActorID,
     pub active_revocations: BTreeMap<[u8; 32], u64>,
+    pub blocklist: crate::identity::blocklist::PersonalBlocklist,
 }
 
 impl IdentityEngine {
@@ -71,6 +72,7 @@ impl IdentityEngine {
             pubkey_bytes,
             actor_id,
             active_revocations: BTreeMap::new(),
+            blocklist: crate::identity::blocklist::PersonalBlocklist::new(),
         }
     }
 }
@@ -175,6 +177,7 @@ impl NexNode {
             self.state.state_node.dag = snap.dag;
             self.state.object_store = snap.object_store;
             self.state.state_node.latest_checkpoint = snap.checkpoint;
+            self.identity.blocklist.blocked_actors = snap.blocked_actors;
         }
 
         // 3. Replay WAL tail from disk and auto-truncate torn bytes
@@ -279,6 +282,7 @@ impl NexNode {
             dag: self.state.state_node.dag.clone(),
             object_store: self.state.object_store.clone(),
             checkpoint: Some(checkpoint.clone()),
+            blocked_actors: self.identity.blocklist.blocked_actors.clone(),
         };
 
         // 1. Atomic Two-Phase Snapshot
@@ -295,6 +299,18 @@ impl NexNode {
         self.storage.wal = WriteAheadLog::open(wal_path).ok();
 
         Ok(checkpoint)
+    }
+
+    pub fn block_actor(&mut self, actor: ActorID) -> bool {
+        self.identity.blocklist.block_actor(actor)
+    }
+
+    pub fn unblock_actor(&mut self, actor: &ActorID) -> bool {
+        self.identity.blocklist.unblock_actor(actor)
+    }
+
+    pub fn is_actor_blocked(&self, actor: &ActorID) -> bool {
+        self.identity.blocklist.is_blocked(actor)
     }
 
     pub fn execute_mutation(&mut self, body: MutationBody) -> Result<[u8; 32], CoreRuntimeError> {

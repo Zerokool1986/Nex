@@ -35,6 +35,8 @@ pub struct StateSnapshotData {
     pub dag: BTreeMap<MutationID, Mutation>,
     pub object_store: BTreeMap<ObjectID, NexObject>,
     pub checkpoint: Option<Checkpoint>,
+    #[serde(default)]
+    pub blocked_actors: BTreeSet<crate::identity::types::ActorID>,
 }
 
 pub struct StateDbEngine;

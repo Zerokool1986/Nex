@@ -293,6 +293,19 @@ fn render_rich_person_card(ui: &mut Ui, app: &mut NexDesktopApp, person: &Projec
                     // Right aligned Quick Actions
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if !person.is_local {
+                            let is_blocked = app.node.is_actor_blocked(&person.actor_id);
+                            if is_blocked {
+                                if ui.button(RichText::new("✓ Unblock Person").size(11.5).color(palette::ACCENT_GREEN)).clicked() {
+                                    app.node.unblock_actor(&person.actor_id);
+                                    app.ui.status_msg = format!("Unblocked {}", person.display_name);
+                                }
+                            } else {
+                                if ui.button(RichText::new("🚫 Block Person").size(11.5).color(Color32::from_rgb(248, 113, 113))).clicked() {
+                                    app.node.block_actor(person.actor_id);
+                                    app.ui.status_msg = format!("Blocked {}", person.display_name);
+                                }
+                            }
+
                             if ui.button(RichText::new("Revoke Access").size(11.5).color(Color32::from_rgb(248, 113, 113))).clicked() {
                                 app.ui.action_state.active_dialog = Some(crate::ui::actions::ActionDialog::DeleteConfirm {
                                     object_id: person.actor_id,
@@ -319,6 +332,23 @@ fn render_rich_person_card(ui: &mut Ui, app: &mut NexDesktopApp, person: &Projec
                 ui.add_space(10.0);
                 ui.separator();
                 ui.add_space(10.0);
+
+                if app.node.is_actor_blocked(&person.actor_id) {
+                    ui.add_space(4.0);
+                    egui::Frame::none()
+                        .fill(Color32::from_rgba_premultiplied(239, 68, 68, 25))
+                        .stroke(egui::Stroke::new(1.0, Color32::from_rgb(239, 68, 68)))
+                        .corner_radius(egui::CornerRadius::same(6))
+                        .inner_margin(8.0)
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new("🚫 Blocked Locally").size(12.0).strong().color(Color32::from_rgb(248, 113, 113)));
+                                ui.label(RichText::new("— You have blocked direct interaction from this person. This does not affect their global NEX identity or other spaces.")
+                                    .size(11.5).color(palette::TEXT_SECONDARY));
+                            });
+                        });
+                    ui.add_space(6.0);
+                }
 
                 // 2. CONCEPTUAL SEPARATION: ACCESS & CAPABILITY GRANTS
                 ui.horizontal(|ui| {

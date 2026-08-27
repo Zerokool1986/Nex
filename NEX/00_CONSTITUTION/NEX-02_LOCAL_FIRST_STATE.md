@@ -17,3 +17,4 @@ Snapshots (`state.db`) are created via an atomic two-phase commit:
    All user-facing and application-facing state representations (including `object_store`, ViewModels, and secondary indices) MUST strictly reflect the winner determined by the causal LWW decision. Materialized views must never be updated independently of the causal ordering decision, regardless of network transport arrival order, sync batch boundaries, or full-object replication mechanisms.
 3. **Losing Write Preservation:**
    Losing mutations are permanently retained in the immutable causal DAG and `wal.log` for cryptographic auditability and provenance, but are not exposed as active state in the user interface.
+

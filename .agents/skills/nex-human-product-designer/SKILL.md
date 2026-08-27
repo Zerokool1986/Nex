@@ -21,15 +21,16 @@ Its mission is to ensure that a non-technical human understands NEX instantly:
 - The user thinks: **"This is my world. My stuff is here. These are my people. These are my devices. I decide who gets access."**
 - When the Experience Slider turns up, the machinery reveals itself without changing the underlying world.
 
-### 1.2 Surface Emotional Taxonomy
-- **Home:** `Sanctuary` (Calm personal sovereignty and morning orientation)
-- **Family:** `Hearth` (Protected collective warmth and shared memories)
-- **Photos:** `Memory` (Pure visual life records in full uncompressed fidelity)
-- **Drive / Files:** `Foundation` (Autonomous filesystem and document custody)
-- **People:** `Web of Trust` (Human identities, relationships, and cryptographic capability grants)
-- **Devices:** `Physical Mesh` (Hardware nodes, peer conduits, and local transports)
-- **Network / Topology:** `Constellation` (Spatial causal graph and replication radar)
-- **Universal Inspector:** `Truth Layer` (InvariantBlk3 Object ID, physical residency, and cryptographic provenance)
+### 1.2 The Authoritative 8-Surface + Truth Layer Ontology
+1. **Home:** `🏠 Sanctuary` — *Where am I?* (Calm personal sovereignty and morning orientation)
+2. **Family:** `🔥 Hearth` — *Who is my circle?* (Protected collective warmth and shared memories)
+3. **Photos:** `🖼 Memory` — *What have we lived?* (Pure visual life records in full uncompressed fidelity)
+4. **Drive / Files:** `📁 Foundation` — *What do I own?* (Autonomous filesystem and document custody)
+5. **People:** `🤝 Web of Trust` — *Who have I chosen to trust?* (Human identities, relationships, and capability grants)
+6. **Devices:** `📡 Physical Mesh` — *Where does my world physically live?* (Hardware nodes, peer conduits, local transports)
+7. **Topology:** `🌌 Constellation` — *How do my pieces connect and move?* (Spatial causal graph and replication radar)
+8. **Maps:** `🗺 Territory` — *Where does my world exist?* (Sovereign spatial lens, private geodata, and offline territory)
+9. **Universal Inspector:** `🔬 Truth Layer` — *Why should I believe any of it?* (Epistemic proof, physical residency, and cryptographic provenance)
 
 ---
 
@@ -116,8 +117,8 @@ NEX SURFACE DESIGN CONTRACT
 Surface: [Name]
 Space/Lens: [SpaceType / NavTab / Lens]
 Primary human job: [What job does this surface do for a human?]
-Emotional role: [Sanctuary / Hearth / Memory / Foundation / Web of Trust / Physical Mesh]
-Primary object: [NexObject type / Actor / Space / Device]
+Emotional role: [Sanctuary / Hearth / Memory / Foundation / Web of Trust / Physical Mesh / Constellation / Territory / Truth Layer]
+Primary object: [NexObject type / Actor / Space / Device / Observation]
 Primary action: [Single primary CTA]
 Secondary actions: [Quick actions]
 
@@ -177,16 +178,20 @@ What must be true before implementation is considered complete?
 ## 4. Screen-by-Screen Laboratory Sequence
 
 ```text
-Home (Sanctuary) ✅ 
-  └──> Family (Hearth) ✅ 
-        └──> Photos (Memory) 🔨 [CURRENT]
-              └──> Drive (Foundation)
-                    └──> People (Web of Trust)
-                          └──> Devices (Physical Mesh)
-                                └──> Universal Inspector (Truth Layer)
-                                      └──> Command Palette (Velocity Layer)
-                                            └──> Full 15-Journey Human Trial
+1. Home (🏠 Sanctuary) ✅
+   └──> 2. Family (🔥 Hearth) ✅
+         └──> 3. Photos (🖼 Memory) ✅
+               └──> 4. Drive (📁 Foundation) ✅
+                     └──> 5. People (🤝 Web of Trust) ✅
+                           └──> 6. Devices (📡 Physical Mesh) ✅
+                                 └──> 7. Topology (🌌 Constellation) ✅
+                                       └──> 8. Maps (🗺 Territory) 🔨 [CONTRACT SEALED]
+                                             └──> 9. Universal Inspector (🔬 Truth Layer)
+                                                   └──> Full 15-Journey Human Trial
 ```
+
+### Canonical 8-Surface Cross-Lens Invariant Traversal:
+`Maps → Photos → Drive → Family → People → Devices → Topology → Inspector → Maps`
 
 For each step:
 ```text

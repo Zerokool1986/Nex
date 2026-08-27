@@ -214,103 +214,105 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
                         ui.set_width(220.0);
                         ui.set_min_height(ui.available_height());
 
-                        // ── Node Identity Anchor ──
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Image::new(egui::include_image!("../../assets/nex_brand_icon.png"))
-                                .max_height(26.0)
-                                .max_width(26.0));
-                            ui.add_space(4.0);
-                            ui.vertical(|ui| {
-                                ui.label(RichText::new("NEX").strong().size(16.5).color(palette::TEXT));
-                                let sync = app.sync_status();
-                                let (color, dot) = if sync.contains("Online") {
-                                    (palette::ACCENT_GREEN, "●")
-                                } else if sync.contains("Degraded") {
-                                    (palette::ACCENT_AMBER, "●")
-                                } else {
-                                    (palette::TEXT_DIM, "○")
-                                };
-                                ui.label(RichText::new(format!("{} Sovereign Node", dot))
-                                    .size(11.0).color(color));
-                            });
-                        });
-
-                        ui.add_space(16.0);
-
-                        // ── Quick Search Trigger ──
-                        let search_response = ui.add_sized(
-                            Vec2::new(ui.available_width(), 34.0),
-                            egui::Button::new(
-                                RichText::new(format!("{}  Search or Jump… ⌘K", egui_phosphor::regular::MAGNIFYING_GLASS))
-                                    .size(12.5).color(palette::TEXT_DIM)
-                            )
-                            .fill(palette::PANEL)
-                            .corner_radius(8.0)
-                            .stroke(Stroke::new(1.0_f32, palette::BORDER_SUBTLE)),
-                        );
-                        if search_response.clicked() {
-                            app.ui.command_palette_open = true;
-                            app.ui.command_palette_query.clear();
-                        }
-
-                        ui.add_space(18.0);
-
-                        // ── SPACES (Trust Boundaries) ──
-                        section_header(ui, "SPACES");
-                        nav_item(ui, app, NavTab::Home,     egui_phosphor::regular::HOUSE_SIMPLE, "Personal", "⌘1");
-                        nav_item(ui, app, NavTab::Family,   egui_phosphor::regular::USERS_THREE, "Family", "⌘2");
-
-                        ui.add_space(16.0);
-
-                        // ── LENSES (Projections of DAG) ──
-                        section_header(ui, "LENSES");
-                        nav_item(ui, app, NavTab::Photos,   egui_phosphor::regular::IMAGE, "Photos", "⌘3");
-                        nav_item(ui, app, NavTab::Drive,    egui_phosphor::regular::FOLDER_SIMPLE, "Drive", "⌘4");
-                        nav_item(ui, app, NavTab::Maps,     egui_phosphor::regular::MAP_TRIFOLD, "Maps", "");
-
-                        ui.add_space(16.0);
-
-                        // ── MESH & TRUST (Hardware & Identity) ──
-                        section_header(ui, "MESH & TRUST");
-                        nav_item(ui, app, NavTab::People,   egui_phosphor::regular::IDENTIFICATION_CARD, "People", "");
-                        nav_item(ui, app, NavTab::Devices,  egui_phosphor::regular::DESKTOP_TOWER, "Devices", "");
-                        nav_item(ui, app, NavTab::Network,  egui_phosphor::regular::GRAPH, "Topology", "");
-
-                        // Bottom-anchored utility dock
-                        ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                            ui.add_space(4.0);
-
-                            // Progressive Disclosure Experience Slider
+                        ui.vertical(|ui| {
+                            // ── Node Identity Anchor ──
                             ui.horizontal(|ui| {
-                                let tiers = [
-                                    (InterfaceComplexity::Simple, "Simple"),
-                                    (InterfaceComplexity::Standard, "Standard"),
-                                    (InterfaceComplexity::Advanced, "Adv"),
-                                    (InterfaceComplexity::Expert, "Operator"),
-                                ];
-                                for (tier, label) in tiers {
-                                    let is_active = app.ui.complexity == tier;
-                                    let text_color = if is_active { palette::TEXT } else { palette::TEXT_DIM };
-                                    let bg = if is_active { palette::SELECTED } else { Color32::TRANSPARENT };
-                                    let stroke = if is_active { Stroke::new(1.0_f32, palette::ACCENT) } else { Stroke::NONE };
-                                    if ui.add(
-                                        egui::Button::new(RichText::new(label).size(10.5).color(text_color))
-                                            .fill(bg)
-                                            .stroke(stroke)
-                                            .corner_radius(4.0)
-                                            .min_size(Vec2::new(36.0, 22.0))
-                                    ).clicked() {
-                                        app.ui.complexity = tier;
-                                    }
-                                }
+                                ui.add(egui::Image::new(egui::include_image!("../../assets/nex_brand_icon.png"))
+                                    .max_height(26.0)
+                                    .max_width(26.0));
+                                ui.add_space(4.0);
+                                ui.vertical(|ui| {
+                                    ui.label(RichText::new("NEX").strong().size(16.5).color(palette::TEXT));
+                                    let sync = app.sync_status();
+                                    let (color, dot) = if sync.contains("Online") {
+                                        (palette::ACCENT_GREEN, "●")
+                                    } else if sync.contains("Degraded") {
+                                        (palette::ACCENT_AMBER, "●")
+                                    } else {
+                                        (palette::TEXT_DIM, "○")
+                                    };
+                                    ui.label(RichText::new(format!("{} Sovereign Node", dot))
+                                        .size(11.0).color(color));
+                                });
                             });
-                            ui.add_space(6.0);
 
-                            // Settings link
-                            nav_item(ui, app, NavTab::Settings, egui_phosphor::regular::GEAR_SIX, "Node Settings", "");
+                            ui.add_space(16.0);
 
-                            ui.add_space(6.0);
-                            ui.add(egui::Separator::default().spacing(1.0));
+                            // ── Quick Search Trigger ──
+                            let search_response = ui.add_sized(
+                                Vec2::new(ui.available_width(), 34.0),
+                                egui::Button::new(
+                                    RichText::new(format!("{}  Search or Jump… ⌘K", egui_phosphor::regular::MAGNIFYING_GLASS))
+                                        .size(12.5).color(palette::TEXT_DIM)
+                                )
+                                .fill(palette::PANEL)
+                                .corner_radius(8.0)
+                                .stroke(Stroke::new(1.0_f32, palette::BORDER_SUBTLE)),
+                            );
+                            if search_response.clicked() {
+                                app.ui.command_palette_open = true;
+                                app.ui.command_palette_query.clear();
+                            }
+
+                            ui.add_space(18.0);
+
+                            // ── SPACES (Trust Boundaries) ──
+                            section_header(ui, "SPACES");
+                            nav_item(ui, app, NavTab::Home,     egui_phosphor::regular::HOUSE_SIMPLE, "Personal", "⌘1");
+                            nav_item(ui, app, NavTab::Family,   egui_phosphor::regular::USERS_THREE, "Family", "⌘2");
+
+                            ui.add_space(16.0);
+
+                            // ── LENSES (Projections of DAG) ──
+                            section_header(ui, "LENSES");
+                            nav_item(ui, app, NavTab::Photos,   egui_phosphor::regular::IMAGE, "Photos", "⌘3");
+                            nav_item(ui, app, NavTab::Drive,    egui_phosphor::regular::FOLDER_SIMPLE, "Drive", "⌘4");
+                            nav_item(ui, app, NavTab::Maps,     egui_phosphor::regular::MAP_TRIFOLD, "Maps", "");
+
+                            ui.add_space(16.0);
+
+                            // ── MESH & TRUST (Hardware & Identity) ──
+                            section_header(ui, "MESH & TRUST");
+                            nav_item(ui, app, NavTab::People,   egui_phosphor::regular::IDENTIFICATION_CARD, "People", "");
+                            nav_item(ui, app, NavTab::Devices,  egui_phosphor::regular::DESKTOP_TOWER, "Devices", "");
+                            nav_item(ui, app, NavTab::Network,  egui_phosphor::regular::GRAPH, "Topology", "");
+
+                            // Bottom-anchored utility dock
+                            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                                ui.add_space(4.0);
+
+                                // Progressive Disclosure Experience Slider
+                                ui.horizontal(|ui| {
+                                    let tiers = [
+                                        (InterfaceComplexity::Simple, "Simple"),
+                                        (InterfaceComplexity::Standard, "Standard"),
+                                        (InterfaceComplexity::Advanced, "Adv"),
+                                        (InterfaceComplexity::Expert, "Operator"),
+                                    ];
+                                    for (tier, label) in tiers {
+                                        let is_active = app.ui.complexity == tier;
+                                        let text_color = if is_active { palette::TEXT } else { palette::TEXT_DIM };
+                                        let bg = if is_active { palette::SELECTED } else { Color32::TRANSPARENT };
+                                        let stroke = if is_active { Stroke::new(1.0_f32, palette::ACCENT) } else { Stroke::NONE };
+                                        if ui.add(
+                                            egui::Button::new(RichText::new(label).size(10.5).color(text_color))
+                                                .fill(bg)
+                                                .stroke(stroke)
+                                                .corner_radius(4.0)
+                                                .min_size(Vec2::new(36.0, 22.0))
+                                        ).clicked() {
+                                            app.ui.complexity = tier;
+                                        }
+                                    }
+                                });
+                                ui.add_space(6.0);
+
+                                // Settings link
+                                nav_item(ui, app, NavTab::Settings, egui_phosphor::regular::GEAR_SIX, "Node Settings", "");
+
+                                ui.add_space(6.0);
+                                ui.add(egui::Separator::default().spacing(1.0));
+                            });
                         });
                     });
 
@@ -322,21 +324,23 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
                         ui.set_min_width(ui.available_width());
                         ui.set_min_height(ui.available_height());
 
-                        match app.ui.active_tab {
-                            NavTab::Home     => home::render(ui, app),
-                            NavTab::Photos   => photos::render(ui, app),
-                            NavTab::Media    => media::render(ui, app),
-                            NavTab::Maps     => maps::render(ui, app),
-                            NavTab::Drive    => drive::render(ui, app),
-                            NavTab::People   => people::render(ui, app),
-                            NavTab::Devices  => devices::render(ui, app),
-                            NavTab::Family   => home::render_family(ui, app),
-                            NavTab::Network  => network::render(ui, app),
-                            NavTab::Settings => settings::render(ui, app),
-                        }
+                        ui.vertical(|ui| {
+                            match app.ui.active_tab {
+                                NavTab::Home     => home::render(ui, app),
+                                NavTab::Photos   => photos::render(ui, app),
+                                NavTab::Media    => media::render(ui, app),
+                                NavTab::Maps     => maps::render(ui, app),
+                                NavTab::Drive    => drive::render(ui, app),
+                                NavTab::People   => people::render(ui, app),
+                                NavTab::Devices  => devices::render(ui, app),
+                                NavTab::Family   => home::render_family(ui, app),
+                                NavTab::Network  => network::render(ui, app),
+                                NavTab::Settings => settings::render(ui, app),
+                            }
 
-                        // Trigger action modal dialogs (Import, Export, Proximity SAS Verification)
-                        actions::render_action_dialog(ui, app);
+                            // Trigger action modal dialogs (Import, Export, Proximity SAS Verification)
+                            actions::render_action_dialog(ui, app);
+                        });
                     });
             });
         });

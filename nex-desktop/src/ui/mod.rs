@@ -110,50 +110,58 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
             });
         });
         return;
-    }
-
-    // Top bar with Official Brand Logo Asset, Truthful Sync State & Global Experience Slider
+    }    // Top bar with Master Brand Identity, Truthful Sync Beacon & Tactile Experience Segmented Control
     TopBottomPanel::top("top_bar")
-        .frame(Frame::new().fill(palette::SIDEBAR).inner_margin(8.0))
+        .frame(Frame::new().fill(palette::SIDEBAR).inner_margin(10.0))
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                // Official Interlocking Master Logo Mark from User Upload
+                // Official Interlocking Master Logo Mark & Sanctuary Tagline
                 ui.add(egui::Image::new(egui::include_image!("../../assets/nex_brand_icon.png"))
-                    .max_height(20.0)
-                    .max_width(20.0));
-                ui.label(RichText::new("NEX").strong().size(18.0).color(palette::TEXT));
-                ui.label(RichText::new("• Sovereign connections").size(12.0).color(palette::TEXT_DIM));
+                    .max_height(22.0)
+                    .max_width(22.0));
+                ui.label(RichText::new("NEX").strong().size(19.0).color(palette::TEXT));
+                ui.label(RichText::new("• Sovereign Sanctuary").size(12.0).color(palette::TEXT_DIM));
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let sync = app.sync_status();
-                    let color = if sync.contains("Online") {
-                        palette::ACCENT_GREEN
-                    } else if sync.contains("Degraded") {
-                        palette::ACCENT_AMBER
-                    } else {
-                        palette::TEXT_DIM
-                    };
-                    ui.label(RichText::new(sync).color(color).size(13.0));
-                    ui.separator();
-                    ui.label(RichText::new(format!("ID: {}", app.actor_id_short()))
-                        .color(palette::TEXT_DIM).size(12.0));
+                    // Tactile Segmented Control for Global Experience Slider
+                    Frame::new()
+                        .fill(palette::PANEL)
+                        .corner_radius(6.0)
+                        .inner_margin(egui::Margin::symmetric(4, 3))
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                let c = app.ui.complexity;
+                                if ui.selectable_label(c == InterfaceComplexity::Simple, "Simple").clicked() {
+                                    app.ui.complexity = InterfaceComplexity::Simple;
+                                }
+                                if ui.selectable_label(c == InterfaceComplexity::Standard, "Standard").clicked() {
+                                    app.ui.complexity = InterfaceComplexity::Standard;
+                                }
+                                if ui.selectable_label(c == InterfaceComplexity::Advanced, "Advanced").clicked() {
+                                    app.ui.complexity = InterfaceComplexity::Advanced;
+                                }
+                                if ui.selectable_label(c == InterfaceComplexity::Expert, "Operator").clicked() {
+                                    app.ui.complexity = InterfaceComplexity::Expert;
+                                }
+                            });
+                        });
+
                     ui.separator();
 
-                    // Global Experience Slider (Simple -> Standard -> Advanced -> Operator)
-                    egui::ComboBox::from_id_salt("global_experience_slider")
-                        .selected_text(match app.ui.complexity {
-                            InterfaceComplexity::Simple => "🟢 Simple",
-                            InterfaceComplexity::Standard => "🔵 Standard",
-                            InterfaceComplexity::Advanced => "🟡 Advanced",
-                            InterfaceComplexity::Expert => "🟣 Operator",
-                        })
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut app.ui.complexity, InterfaceComplexity::Simple, "🟢 Simple");
-                            ui.selectable_value(&mut app.ui.complexity, InterfaceComplexity::Standard, "🔵 Standard");
-                            ui.selectable_value(&mut app.ui.complexity, InterfaceComplexity::Advanced, "🟡 Advanced");
-                            ui.selectable_value(&mut app.ui.complexity, InterfaceComplexity::Expert, "🟣 Operator");
-                        });
-                    ui.label(RichText::new("Experience:").color(palette::TEXT_DIM).size(12.5));
+                    // Truthful Sync State Beacon
+                    let sync = app.sync_status();
+                    let (color, icon_glyph) = if sync.contains("Online") {
+                        (palette::ACCENT_GREEN, egui_phosphor::regular::SHIELD_CHECK)
+                    } else if sync.contains("Degraded") {
+                        (palette::ACCENT_AMBER, egui_phosphor::regular::WARNING)
+                    } else {
+                        (palette::TEXT_DIM, egui_phosphor::regular::CLOUD_SLASH)
+                    };
+                    ui.label(RichText::new(format!("{} {}", icon_glyph, sync)).color(color).size(13.0));
+
+                    ui.separator();
+                    ui.label(RichText::new(format!("Actor: {}", app.actor_id_short()))
+                        .color(palette::TEXT_DIM).size(12.0));
                 });
             });
         });
@@ -164,7 +172,7 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 let msg = if app.ui.status_msg.is_empty() {
-                    format!("{} objects in store | Mode: {:?}", app.object_count(), app.ui.complexity)
+                    format!("{} objects in single DAG | Mode: {:?} | No Cloud Dependency", app.object_count(), app.ui.complexity)
                 } else {
                     app.ui.status_msg.clone()
                 };
@@ -172,66 +180,59 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
             });
         });
 
-    // Left sidebar with Vector Phosphor Iconography
+    // Left sidebar with Categorized Navigation Rail
     SidePanel::left("sidebar")
         .resizable(false)
-        .exact_width(140.0)
-        .frame(Frame::new().fill(palette::SIDEBAR).inner_margin(8.0))
+        .exact_width(155.0)
+        .frame(Frame::new().fill(palette::SIDEBAR).inner_margin(10.0))
         .show(ctx, |ui| {
-            ui.add_space(8.0);
-            nav_item(ui, app, NavTab::Home,     &format!("{}  Home", egui_phosphor::regular::HOUSE));
+            ui.add_space(4.0);
+            ui.label(RichText::new("SPACES").size(10.5).strong().color(palette::TEXT_DIM));
+            ui.add_space(2.0);
+            nav_item(ui, app, NavTab::Home,     &format!("{}  Personal", egui_phosphor::regular::HOUSE));
+            nav_item(ui, app, NavTab::Family,   &format!("{}  Family", egui_phosphor::regular::HEART));
+
+            ui.add_space(12.0);
+            ui.label(RichText::new("LENSES").size(10.5).strong().color(palette::TEXT_DIM));
+            ui.add_space(2.0);
             nav_item(ui, app, NavTab::Photos,   &format!("{}  Photos", egui_phosphor::regular::IMAGE));
+            nav_item(ui, app, NavTab::Drive,    &format!("{}  Drive", egui_phosphor::regular::HARD_DRIVE));
             nav_item(ui, app, NavTab::Media,    &format!("{}  Media", egui_phosphor::regular::FILM_STRIP));
             nav_item(ui, app, NavTab::Maps,     &format!("{}  Maps", egui_phosphor::regular::MAP_PIN));
-            nav_item(ui, app, NavTab::Drive,    &format!("{}  Drive", egui_phosphor::regular::HARD_DRIVE));
+
+            ui.add_space(12.0);
+            ui.label(RichText::new("MESH & TRUST").size(10.5).strong().color(palette::TEXT_DIM));
+            ui.add_space(2.0);
             nav_item(ui, app, NavTab::People,   &format!("{}  People", egui_phosphor::regular::USERS));
             nav_item(ui, app, NavTab::Devices,  &format!("{}  Devices", egui_phosphor::regular::DEVICES));
-            nav_item(ui, app, NavTab::Family,   &format!("{}  Family", egui_phosphor::regular::HEART));
-            nav_item(ui, app, NavTab::Network,  &format!("{}  Network", egui_phosphor::regular::SHARE_NETWORK));
+            nav_item(ui, app, NavTab::Network,  &format!("{}  Topology", egui_phosphor::regular::SHARE_NETWORK));
+
             ui.add_space(16.0);
             ui.separator();
-            ui.add_space(8.0);
+            ui.add_space(4.0);
             nav_item(ui, app, NavTab::Settings, &format!("{}  Settings", egui_phosphor::regular::GEAR));
         });
 
-    // Main content panel (with side-by-side Universal Inspector when active and not in dedicated multi-column tabs)
+    // Central canvas panel
     CentralPanel::default()
-        .frame(Frame::new().fill(palette::BG).inner_margin(20.0))
+        .frame(Frame::new().fill(palette::BG).inner_margin(18.0))
         .show(ctx, |ui| {
-            if app.ui.selected_entity.is_some() 
-                && app.ui.active_tab != NavTab::Network 
-                && app.ui.active_tab != NavTab::Media 
-                && app.ui.active_tab != NavTab::Maps 
-                && app.ui.active_tab != NavTab::Drive 
-                && app.ui.active_tab != NavTab::People 
-            {
-                ui.columns(2, |cols| {
-                    let (left, right) = cols.split_at_mut(1);
-                    render_active_tab(&mut left[0], app);
-                    inspector::render_inspector_panel(&mut right[0], app);
-                });
-            } else {
-                render_active_tab(ui, app);
+            match app.ui.active_tab {
+                NavTab::Home     => home::render(ui, app),
+                NavTab::Photos   => photos::render(ui, app),
+                NavTab::Media    => media::render(ui, app),
+                NavTab::Maps     => maps::render(ui, app),
+                NavTab::Drive    => drive::render(ui, app),
+                NavTab::People   => people::render(ui, app),
+                NavTab::Devices  => devices::render(ui, app),
+                NavTab::Family   => home::render_family(ui, app),
+                NavTab::Network  => network::render(ui, app),
+                NavTab::Settings => settings::render(ui, app),
             }
 
-            // Render Sovereign Action Dialog if active
+            // Trigger action modal dialogs (Import, Export, Proximity SAS Verification)
             actions::render_action_dialog(ui, app);
         });
-}
-
-fn render_active_tab(ui: &mut egui::Ui, app: &mut NexDesktopApp) {
-    match app.ui.active_tab {
-        NavTab::Home     => home::render(ui, app),
-        NavTab::Photos   => photos::render(ui, app),
-        NavTab::Media    => media::render(ui, app),
-        NavTab::Maps     => maps::render(ui, app),
-        NavTab::Drive    => drive::render(ui, app),
-        NavTab::People   => people::render(ui, app),
-        NavTab::Devices  => devices::render(ui, app),
-        NavTab::Family   => home::render_family(ui, app),
-        NavTab::Network  => network::render(ui, app),
-        NavTab::Settings => settings::render(ui, app),
-    }
 }
 
 fn nav_item(ui: &mut egui::Ui, app: &mut NexDesktopApp, tab: NavTab, label: &str) {
@@ -240,10 +241,11 @@ fn nav_item(ui: &mut egui::Ui, app: &mut NexDesktopApp, tab: NavTab, label: &str
     let text_color = if selected { palette::ACCENT } else { palette::TEXT };
 
     let response = ui.add_sized(
-        Vec2::new(124.0, 32.0),
+        Vec2::new(135.0, 32.0),
         egui::Button::new(RichText::new(label).color(text_color).size(13.5))
             .fill(bg)
-            .stroke(Stroke::NONE)
+            .corner_radius(6.0)
+            .stroke(if selected { Stroke::new(1.0_f32, palette::ACCENT) } else { Stroke::NONE })
             .frame(true),
     );
     if response.clicked() {

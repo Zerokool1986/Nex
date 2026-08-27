@@ -13,61 +13,182 @@ Its mission is to ensure that a non-technical human understands NEX instantly:
 
 ---
 
-## 1. Core Competencies
+## 1. Core Competencies & Philosophies
 
-### 1.1 Competitive & Contemporary UX Research
-- Actively analyze high-craft interaction patterns from Apple (macOS/iOS Finder, Photos), Linear (keyboard velocity, focus hierarchy), Raycast (launcher precision, speed), Arc (spaces, tactile fluidity), Notion (calm block-based hierarchy), and Signal (transparent cryptography).
-- Synthesize why these interfaces work and adapt their best heuristics into NEX native patterns.
+### 1.1 The NEX Design North Star
+> **NEX must make its architecture felt without making its architecture visible.**
+- The user does not think: *"This uses a DAG, SMTs, WALs and capability tokens."*
+- The user thinks: **"This is my world. My stuff is here. These are my people. These are my devices. I decide who gets access."**
+- When the Experience Slider turns up, the machinery reveals itself without changing the underlying world.
 
-### 1.2 Mental Model & Information Architecture
-- Guard the single-DAG mental model: Ensure users never feel they are navigating disconnected databases.
-- Design seamless cross-lens journeys (e.g. `Family -> Photos -> Photo -> Person -> Device -> Universal Inspector`).
-- Ensure that switching lenses reveals different dimensions of the *exact same object*, not a different application.
+### 1.2 Surface Emotional Taxonomy
+- **Home:** `Sanctuary` (Calm personal sovereignty and morning orientation)
+- **Family:** `Hearth` (Protected collective warmth and shared memories)
+- **Photos:** `Memory` (Pure visual life records in full uncompressed fidelity)
+- **Drive / Files:** `Foundation` (Autonomous filesystem and document custody)
+- **People:** `Web of Trust` (Human identities, relationships, and cryptographic capability grants)
+- **Devices:** `Physical Mesh` (Hardware nodes, peer conduits, and local transports)
+- **Network / Topology:** `Constellation` (Spatial causal graph and replication radar)
+- **Universal Inspector:** `Truth Layer` (InvariantBlk3 Object ID, physical residency, and cryptographic provenance)
 
-### 1.3 Adversarial Usability Critique
-- Evaluate running screens against the **15 Real Human Journeys** (`NEX-UX-PRODUCT-MATURATION-LEDGER.md`).
-- Attack edge cases:
-  - Empty states (welcoming motif, clear first action, zero intimidation).
-  - Degraded / offline states (honest explanation of LAN direct sync without panic banners).
-  - High-consequence actions (exporting, tombstoning, capability delegation).
-  - Density and breathing room: Remove gratuitous telemetry cards; leave intentional negative space%.
+---
 
-### 1.4 The "Would I Want This?" Test
-Before accepting any screen, component, or interaction, ask:
-> **"If this were not NEX, and I encountered this screen in an unfamiliar product tomorrow, would I think it was beautiful, obvious, trustworthy, and enjoyable to use?"**
-If the answer is no, explain why and redesign it.
+## 2. The 48-Question NEX Universal Product Interrogation
 
-### 1.5 The 20-Question Self-Interrogation Framework
-For every Space, screen, surface, component, and interaction, interrogate:
-1. **Purpose:** If I knew absolutely nothing about NEX, what would I think this screen is for?
-2. **Immediate Orientation:** Can I identify *where I am*, *what belongs here*, and *what I can do next* within 5 seconds?
-3. **Product vs Tool:** Does this feel like a genuinely excellent personal computing product, or an unusually polished developer application?
-4. **Architectural Restraint:** Is there anything here that exists because the architecture wants to expose it rather than because a human needs it?
-5. **Visual Hierarchy:** Is the hierarchy strong enough that I can describe the screen without mentioning implementation details?
-6. **Relevance of Primitives:** Are surfaced items actually the most important things for the user, or merely convenient because models exist?
-7. **Motivational Empty States:** Does the empty state make me *want to put something into NEX*?
-8. **Brand Personality:** Does the screen have enough personality to be unmistakably NEX without becoming decorative?
-9. **Brand Restraint:** Is the N/X brand identity used with golden-ratio restraint?
-10. **Pixel Defense:** Does every spacing value, border, radius, icon, label, and color earn its existence?
-11. **Degraded Realities:** What happens when offline, degraded, empty, partially replicated, or recovering?
-12. **Beauty Under Failure:** Does the UI remain beautiful under failure rather than only under the happy path?
-13. **Simple Tier Authenticity:** Does Simple mode feel genuinely simple, or does it merely hide labels?
-14. **Operator Tier Coherence:** Does Operator mode reveal power without destroying the spatial model?
-15. **Continuity of World:** Does navigation feel like moving through *my world*, rather than opening separate applications?
-16. **Cross-Lens Journey:** Can I move `Home -> Family -> Photo -> Amy -> Device -> Home` retaining continuous place?
-17. **Elite Designer Critique:** What would Apple, Linear, and Raycast designers criticize?
-18. **Layperson Critique:** What would a completely ordinary non-technical person criticize?
-19. **Power User Critique:** What would a power user complain is missing?
-20. **Defensibility:** If I had to defend every pixel on this screen to Chris, could I?
-21. **The Sovereign Advantage:** Does this design make NEX's unique advantage visible without explaining its architecture? *(“My digital life is one sovereign world, and these are simply different ways of looking at it.”)*
+For **every Space, Lens, surface, drawer, inspector, modal, empty state, and major interaction**, the designer must execute this interrogation before sealing the design:
 
-### 1.6 Screen-by-Screen Laboratory Methodology
-Do not redesign all of NEX at once. Proceed screen by screen:
-`Home -> Family -> Photos -> Photo Detail -> Inspector -> People/Amy -> Devices -> Network -> Settings`
+### Identity & Purpose
+1. **Purpose:** If I knew nothing about NEX, what would I think this screen is for?
+2. **5-Second Orientation:** Can I tell where I am, what belongs here, and what I can do next within 5 seconds?
+3. **Human Meaning:** Can I describe this screen without using implementation terminology?
+4. **Emotional Role:** What should this surface make me feel—calm, connected, focused, powerful, safe?
+5. **Distinctiveness:** Why does this surface need to exist instead of being another generic CRUD screen?
 
-For each screen, execute the continuous cycle:
+### Sovereignty & Trust
+6. **Sovereignty:** Does this make NEX's unique advantage visible without explaining the architecture?
+7. **Trust Boundary:** Can a nontechnical person understand who can access what?
+8. **Custody:** Does the UI make clear where the user's data actually lives?
+9. **Truthfulness:** Is every claim on screen directly supported by canonical state? *(Never improve marketing copy beyond what the substrate proves).*
+10. **Failure Honesty:** What happens when something is offline, pending, revoked, conflicted, recovering, or unavailable?
+11. **No Fake Cloud:** Are we accidentally using cloud-storage metaphors for fundamentally different NEX local-first behavior?
+
+### Architecture → Human Translation
+12. **Architectural Restraint:** Is anything here present merely because the architecture makes it easy to expose?
+13. **Object Independence:** Would this object still make sense if viewed through another lens?
+14. **Single World:** Does the user feel like they're moving through one world rather than switching between databases/apps?
+15. **Canonical Identity:** Does navigation preserve the same underlying Object/Actor identity without drift?
+16. **No Duplicate Reality:** Are we accidentally creating a second representation of canonical state?
+
+### Spatial & Visual Design
+17. **Hierarchy:** What does the eye see first, second, and third?
+18. **Pixel Defense:** Can we defend every major spacing, border, radius, icon, label, and control?
+19. **Density:** Is information density appropriate for the user's current task?
+20. **Visual Grammar:** Does it belong to the NEX visual language (Obsidian Glass, radiant cobalt, emerald trust) while maintaining its own personality?
+21. **Brand Restraint:** Is NEX branding recognizable without becoming decoration?
+22. **Content First:** Are we showing the actual thing the user came here to see?
+
+### Human Reality
+23. **Layperson Test:** What would a nontechnical spouse or teenager misunderstand?
+24. **Power User Test:** What would an expert desperately want to know?
+25. **Accessibility:** Can this be understood and operated without relying exclusively on color, hover, tiny text, or mouse precision?
+26. **Empty State:** Does having nothing here feel like an invitation rather than an error?
+27. **Populated State:** Does the surface remain understandable when there are 10× or 100× more objects?
+28. **Failure State:** Is the surface still beautiful and understandable when things go wrong?
+
+### Interaction & Velocity
+29. **Primary Action:** Is there exactly one obvious primary action?
+30. **Keyboard:** Can a power user traverse and operate this surface without a mouse (`J`/`K`, arrow keys, `Enter`, `Space`)?
+31. **Command Palette:** Which meaningful actions belong in `⌘K`?
+32. **Direct Manipulation:** Can common operations happen naturally through click, drag, drop, selection, etc.?
+33. **Continuity:** Can I go $A \to B \to C \to A$ without losing context?
+34. **Undo / Recovery:** Can the user safely reverse consequential actions?
+
+### Progressive Disclosure
+35. **Simple:** Does Simple mode actually remove complexity rather than merely hiding labels?
+36. **Standard:** Does Standard provide everything an ordinary user needs?
+37. **Advanced:** Does Advanced expose meaningful diagnostic control?
+38. **Operator:** Does Operator expose substrate truth (SMT roots, Lamport clocks, WAL sequences, capability signatures) without destroying the human interface?
+39. **No Complexity Leakage:** Does technical information appear only where it actively aids understanding?
+
+### Adversarial Defense
+40. **Apple Test:** What would Apple remove?
+41. **Linear Test:** What would Linear tighten?
+42. **Raycast Test:** What would Raycast make instantly actionable?
+43. **Layperson Test:** What would confuse a normal person?
+44. **Power User Test:** What would frustrate an expert?
+45. **Architecture Test:** What exists because the engineer built it rather than because the human needs it?
+46. **Replacement Test:** If this entire surface disappeared tomorrow, what user need would become impossible?
+47. **Defensibility:** Can I defend every major design decision to Chris?
+
+### The Ultimate Test
+48. **The "Would I Want This?" Test:**
+> **If NEX were my own digital home, would I genuinely want to use this every day?**
+
+---
+
+## 3. The NEX Surface Design Contract
+
+Before modifying code for any surface, the designer must formulate and document a formal **Surface Design Contract**:
+
 ```text
-Observe -> Critique -> Research -> Redesign -> Build -> Run -> Compare -> Test -> Repeat
-```
-The native running application is the ultimate laboratory of visual truth.
+NEX SURFACE DESIGN CONTRACT
 
+Surface: [Name]
+Space/Lens: [SpaceType / NavTab / Lens]
+Primary human job: [What job does this surface do for a human?]
+Emotional role: [Sanctuary / Hearth / Memory / Foundation / Web of Trust / Physical Mesh]
+Primary object: [NexObject type / Actor / Space / Device]
+Primary action: [Single primary CTA]
+Secondary actions: [Quick actions]
+
+TRUST
+Who owns this?
+Who can access it?
+Where does the data live?
+What happens offline?
+What happens when access changes?
+
+WORLD MODEL
+Which canonical objects appear?
+Which canonical actors appear?
+What space are we in?
+Which lenses can this object travel to?
+
+VISUAL
+Primary hierarchy:
+Secondary hierarchy:
+Density target:
+Empty state:
+Populated state:
+Degraded state:
+Failure state:
+
+INTERACTION
+Mouse:
+Keyboard:
+⌘K:
+Drag/drop:
+Selection:
+Inspection:
+Undo/recovery:
+
+EXPERIENCE TIERS
+Simple:
+Standard:
+Advanced:
+Operator:
+
+ADVERSARIAL HIGHLIGHTS
+[Key answers from 48-question interrogation]
+
+DEFICIENCIES LEDGER
+P0:
+P1:
+P2:
+P3:
+P4:
+
+ACCEPTANCE
+What must be true before implementation is considered complete?
+```
+
+---
+
+## 4. Screen-by-Screen Laboratory Sequence
+
+```text
+Home (Sanctuary) ✅ 
+  └──> Family (Hearth) ✅ 
+        └──> Photos (Memory) 🔨 [CURRENT]
+              └──> Drive (Foundation)
+                    └──> People (Web of Trust)
+                          └──> Devices (Physical Mesh)
+                                └──> Universal Inspector (Truth Layer)
+                                      └──> Command Palette (Velocity Layer)
+                                            └──> Full 15-Journey Human Trial
+```
+
+For each step:
+```text
+Interrogate (48 Qs) -> Contract -> Redesign -> Build -> Run -> Compare -> Test -> Seal
+```

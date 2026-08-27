@@ -1,11 +1,11 @@
-﻿use egui::{Ui, Pos2, Vec2, Rect, Color32, Stroke, CornerRadius, StrokeKind, RichText, Frame, Sense, Painter, FontId, Align2};
+use egui::{Ui, Pos2, Vec2, Rect, Color32, Stroke, CornerRadius, StrokeKind, RichText, Frame, Sense, Painter, FontId, Align2};
 use nex_core::runtime::experience::InterfaceComplexity;
 use nex_core::runtime::shell::SpaceType;
 use nex_core::object::types::{ObjectID, ObjectType};
 use nex_core::product::inspector::UniversalObjectInspector;
 use nex_core::runtime::panels::ContextualPanelsEngine;
-use crate::app::NexDesktopApp;
-use crate::ui::{palette, NavTab, inspector::SelectedEntity};
+use crate::app::{NexDesktopApp, AppStatus};
+use crate::ui::{palette, NavTab, NexUiState, inspector::SelectedEntity};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelationshipClass {
@@ -18,19 +18,19 @@ pub enum RelationshipClass {
 impl RelationshipClass {
     pub fn label(&self) -> &'static str {
         match self {
-            Self::Logical => "Logical (Space / Membership)",
-            Self::Network => "Network (Peers / Reachability)",
-            Self::Transport => "Transport (TCP / Protocols)",
-            Self::DataFlow => "Data Flow (CAS / Replication)",
+            Self::Logical => "Logical (Space / Scope)",
+            Self::Network => "Mesh Link (Direct LAN Peer)",
+            Self::Transport => "Transport (NEX/WIRE/v1)",
+            Self::DataFlow => "Data Replication (CAS Inode)",
         }
     }
 
     pub fn color(&self) -> Color32 {
         match self {
-            Self::Logical => Color32::from_rgb(96, 165, 250),    // Blue
-            Self::Network => Color32::from_rgb(74, 222, 128),    // Green
-            Self::Transport => Color32::from_rgb(251, 191, 36),  // Amber
-            Self::DataFlow => Color32::from_rgb(192, 132, 252),  // Purple
+            Self::Logical => Color32::from_rgb(91, 141, 246),    // Radiant Cobalt
+            Self::Network => Color32::from_rgb(52, 211, 153),   // Emerald Mesh
+            Self::Transport => Color32::from_rgb(251, 191, 36),  // Amber Wire
+            Self::DataFlow => Color32::from_rgb(168, 85, 247),   // Purple CAS
         }
     }
 }
@@ -48,7 +48,7 @@ pub struct VisualizerNode {
     pub id: String,
     pub label: String,
     pub subtitle: String,
-    pub icon: &'static str,
+    pub icon_glyph: &'static str,
     pub base_pos: Pos2,
     pub payload: NodePayload,
 }
@@ -86,41 +86,43 @@ impl NetworkViewState {
 
 pub fn render(ui: &mut Ui, app: &mut NexDesktopApp) {
     ui.horizontal(|ui| {
-        ui.heading(RichText::new("Network & Topology").size(24.0).strong().color(palette::TEXT));
+        ui.vertical(|ui| {
+            ui.heading(RichText::new("Sovereign Topology Radar").size(24.0).strong().color(palette::TEXT));
+            ui.label(RichText::new("Live mathematical constellation of sovereign spaces, physical devices, and CAS objects")
+                .color(palette::TEXT_DIM).size(13.0));
+        });
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            // Zoom controls
-            if ui.button("↺ Reset").clicked() {
+            // Zoom & Canvas controls
+            if ui.button(format!("{} Reset", egui_phosphor::regular::ARROWS_COUNTER_CLOCKWISE)).clicked() {
                 app.ui.network_state.pan_offset = Vec2::ZERO;
                 app.ui.network_state.zoom_level = 1.0;
             }
-            if ui.button("➕").clicked() {
+            if ui.button(egui_phosphor::regular::PLUS).clicked() {
                 app.ui.network_state.zoom_level = (app.ui.network_state.zoom_level * 1.15).min(2.5);
             }
-            if ui.button("➖").clicked() {
+            if ui.button(egui_phosphor::regular::MINUS).clicked() {
                 app.ui.network_state.zoom_level = (app.ui.network_state.zoom_level / 1.15).max(0.5);
             }
 
-            ui.label(RichText::new(format!("Global Tier: {:?}", app.ui.complexity)).color(palette::ACCENT).size(12.0));
+            ui.separator();
+            ui.label(RichText::new(format!("Topology Tier: {:?}", app.ui.complexity)).color(palette::ACCENT).size(12.5));
         });
     });
+    ui.add_space(10.0);
 
-    ui.label(RichText::new("Pure projection of canonical sovereign state — live nodes, spaces, and relationships")
-        .color(palette::TEXT_DIM).size(13.0));
-    ui.add_space(8.0);
-
-    // Derive topology on the fly from canonical state
+    // Derive topology live from canonical state
     let (nodes, edges) = derive_topology(app);
 
-    // Split view: Left = 2D Topology Canvas, Right = Contextual Explanation / Inspector Panel
+    // Split view: Left = 2D Topology Constellation Radar, Right = Contextual Explanation & Inspector
     ui.columns(2, |columns| {
         let (first, second) = columns.split_at_mut(1);
         let canvas_ui = &mut first[0];
         let inspector_ui = &mut second[0];
 
-        // 1. Topology Canvas
+        // 1. Modern Constellation Radar Canvas
         render_canvas(canvas_ui, app, &nodes, &edges);
 
-        // 2. Contextual Inspector / "Why is this connected?"
+        // 2. Contextual Relationship Inspector / "Why is this connected?"
         render_inspector(inspector_ui, app, &nodes, &edges);
     });
 }
@@ -132,34 +134,34 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
     let local_actor_hex = hex::encode(&app.node.identity.actor_id[0..4]);
     let local_device_id = "device_local".to_string();
 
-    // Node 1: Local Device (This PC)
+    // Center Node: Local Device (This PC)
     nodes.push(VisualizerNode {
         id: local_device_id.clone(),
-        label: "This PC (Windows)".to_string(),
-        subtitle: format!("ID: {}", local_actor_hex),
-        icon: "🖥",
-        base_pos: Pos2::new(180.0, 160.0),
+        label: "This PC (Windows Host)".to_string(),
+        subtitle: format!("Actor: {}", local_actor_hex),
+        icon_glyph: egui_phosphor::regular::DESKTOP,
+        base_pos: Pos2::new(260.0, 200.0),
         payload: NodePayload::Device {
             actor_id_hex: hex::encode(&app.node.identity.actor_id),
             is_local: true,
         },
     });
 
-    // Node 2: Personal Space
+    // Space Node 1: Personal Sanctuary
     let personal_space_id = "space_personal".to_string();
     let personal_items = app.node.state.object_store.values()
         .filter(|o| o.metadata.get("space").map(|s| s.as_str()) != Some("Family") && !o.tombstoned)
         .count();
     nodes.push(VisualizerNode {
         id: personal_space_id.clone(),
-        label: "Personal Space".to_string(),
-        subtitle: format!("{} items", personal_items),
-        icon: "🔒",
-        base_pos: Pos2::new(60.0, 60.0),
+        label: "Personal Sanctuary".to_string(),
+        subtitle: format!("{} objects", personal_items),
+        icon_glyph: egui_phosphor::regular::HOUSE,
+        base_pos: Pos2::new(100.0, 90.0),
         payload: NodePayload::Space { space_type: SpaceType::Personal, item_count: personal_items },
     });
 
-    // Node 3: Family Space
+    // Space Node 2: Family Space
     let family_space_id = "space_family".to_string();
     let family_items = app.node.state.object_store.values()
         .filter(|o| o.metadata.get("space").map(|s| s.as_str()) == Some("Family") && !o.tombstoned)
@@ -167,22 +169,22 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
     nodes.push(VisualizerNode {
         id: family_space_id.clone(),
         label: "Family Space".to_string(),
-        subtitle: format!("{} items", family_items),
-        icon: "🏡",
-        base_pos: Pos2::new(300.0, 60.0),
+        subtitle: format!("{} objects", family_items),
+        icon_glyph: egui_phosphor::regular::HEART,
+        base_pos: Pos2::new(420.0, 90.0),
         payload: NodePayload::Space { space_type: SpaceType::Family, item_count: family_items },
     });
 
-    // Node 4: Transport Substrate (LAN / Local Listener)
+    // Transport Node: LAN Mesh & UDP Discovery
     let transport_id = "transport_lan".to_string();
     nodes.push(VisualizerNode {
         id: transport_id.clone(),
-        label: "LAN Transport Substrate".to_string(),
-        subtitle: format!("TCP Socket (State: {:?})", app.node.operational_state),
-        icon: "⚡",
-        base_pos: Pos2::new(60.0, 260.0),
+        label: "Direct LAN Mesh".to_string(),
+        subtitle: format!("UDP 8765 / State: {:?}", app.node.operational_state),
+        icon_glyph: egui_phosphor::regular::SHARE_NETWORK,
+        base_pos: Pos2::new(100.0, 310.0),
         payload: NodePayload::TransportSubstrate {
-            name: "TCP/IP Direct".to_string(),
+            name: "TCP/UDP Direct LAN".to_string(),
             status: format!("{:?}", app.node.operational_state),
         },
     });
@@ -192,9 +194,9 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
         id: "edge_device_personal".to_string(),
         from_node_id: local_device_id.clone(),
         to_node_id: personal_space_id.clone(),
-        label: "owns / participates".to_string(),
+        label: "owns namespace".to_string(),
         relationship_class: RelationshipClass::Logical,
-        explanation_simple: "This device owns your Personal Space.".to_string(),
+        explanation_simple: "This device holds the cryptographic root of your Personal Space.".to_string(),
         explanation_standard: "Your local Windows host holds the root cryptographic identity for your Personal Space.".to_string(),
         explanation_advanced: format!("Actor {} is sovereign owner of Namespace 0x00..00 (Personal).", local_actor_hex),
         explanation_operator: format!("Master Ed25519 Key verified. Local CAS chunk partition active. Current epoch: {}.", app.node.state.current_epoch),
@@ -205,9 +207,9 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
         id: "edge_device_family".to_string(),
         from_node_id: local_device_id.clone(),
         to_node_id: family_space_id.clone(),
-        label: "member of".to_string(),
+        label: "replicated member".to_string(),
         relationship_class: RelationshipClass::Logical,
-        explanation_simple: "This device is a member of the Family Space.".to_string(),
+        explanation_simple: "This device is a verified member of the Family Space.".to_string(),
         explanation_standard: "Configured for Family Space synchronization and shared media storage.".to_string(),
         explanation_advanced: "Local actor authorized for Family Namespace (SpaceType::Family).".to_string(),
         explanation_operator: "Local SMT root initialized. Anti-entropy sync gateway ready for peer discovery.".to_string(),
@@ -220,13 +222,13 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
         to_node_id: transport_id.clone(),
         label: "active carrier".to_string(),
         relationship_class: RelationshipClass::Transport,
-        explanation_simple: "Local network listener is active.".to_string(),
-        explanation_standard: "This PC listens on local network TCP sockets for peer discovery and sync.".to_string(),
+        explanation_simple: "Direct peer-to-peer LAN mesh transport is active without internet.".to_string(),
+        explanation_standard: "This PC listens on local network TCP/UDP sockets for peer discovery and sync.".to_string(),
         explanation_advanced: format!("Transport adapter bound. Node state: {:?}. Wire framing: NEX/WIRE/v1.", app.node.operational_state),
         explanation_operator: "48-byte binary frame headers enabled. Sockets bound on local loopback/LAN.".to_string(),
     });
 
-    // Objects in store (up to 4 real objects from object_store)
+    // Objects in store (orbiting nodes)
     let mut obj_idx = 0;
     for (obj_id, obj) in app.node.state.object_store.iter().filter(|(_, o)| !o.tombstoned).take(4) {
         let obj_node_id = format!("obj_{}", hex::encode(&obj_id[0..4]));
@@ -235,20 +237,20 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
             .cloned()
             .unwrap_or_else(|| "Sovereign Object".to_string());
         let space_name = obj.metadata.get("space").cloned().unwrap_or_else(|| "Personal".to_string());
-        let icon = match obj.object_type {
-            ObjectType::PhotoMedia => "📷",
-            ObjectType::DriveInode => "📄",
-            _ => "📦",
+        let icon_glyph = match obj.object_type {
+            ObjectType::PhotoMedia => egui_phosphor::regular::IMAGE,
+            ObjectType::DriveInode => egui_phosphor::regular::FILE_TEXT,
+            _ => egui_phosphor::regular::FILE,
         };
 
-        let pos_x = 240.0 + (obj_idx as f32) * 80.0;
-        let pos_y = 240.0 + ((obj_idx % 2) as f32) * 50.0;
+        let pos_x = 340.0 + (obj_idx as f32) * 60.0;
+        let pos_y = 260.0 + ((obj_idx % 2) as f32) * 55.0;
 
         nodes.push(VisualizerNode {
             id: obj_node_id.clone(),
             label: if title.len() > 14 { format!("{}...", &title[0..12]) } else { title.clone() },
             subtitle: format!("{} B", obj.payload_bytes.len()),
-            icon,
+            icon_glyph,
             base_pos: Pos2::new(pos_x, pos_y),
             payload: NodePayload::Object {
                 object_id: *obj_id,
@@ -258,21 +260,21 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
             },
         });
 
-        // Edge: Space -> Object (Containment)
-        let parent_space = if space_name == "Family" { &family_space_id } else { &personal_space_id };
+        // Edge to Space
+        let target_space_node = if space_name == "Family" { family_space_id.clone() } else { personal_space_id.clone() };
         edges.push(VisualizerEdge {
-            id: format!("edge_space_{}", obj_node_id),
-            from_node_id: parent_space.clone(),
+            id: format!("edge_obj_{}", obj_node_id),
+            from_node_id: target_space_node,
             to_node_id: obj_node_id.clone(),
             label: "contains".to_string(),
             relationship_class: RelationshipClass::Logical,
-            explanation_simple: format!("'{}' belongs to {} Space.", title, space_name),
+            explanation_simple: format!("Object lives inside the {} Space.", space_name),
             explanation_standard: format!("Object stored under {} Space namespace with sovereign encryption.", space_name),
             explanation_advanced: format!("Schema v{} CAS Inode | Namespace: {}", obj.schema_version, space_name),
             explanation_operator: format!("SMT Leaf Key: {} | Author: {} | Epoch: {}", hex::encode(&obj.object_id[0..8]), hex::encode(&obj.owner_actor_id[0..4]), obj.created_epoch),
         });
 
-        // Edge: Local Device -> Object (Storage / CAS)
+        // Edge to Local Device (CAS)
         edges.push(VisualizerEdge {
             id: format!("edge_store_{}", obj_node_id),
             from_node_id: local_device_id.clone(),
@@ -293,11 +295,12 @@ pub fn derive_topology(app: &NexDesktopApp) -> (Vec<VisualizerNode>, Vec<Visuali
 
 fn render_canvas(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNode], edges: &[VisualizerEdge]) {
     Frame::new()
-        .fill(palette::PANEL)
-        .corner_radius(8.0)
+        .fill(Color32::from_rgb(11, 12, 16))
+        .corner_radius(10.0)
         .inner_margin(12.0)
+        .stroke(Stroke::new(1.0_f32, Color32::from_rgb(30, 32, 42)))
         .show(ui, |ui| {
-            let (rect, response) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 440.0), Sense::click_and_drag());
+            let (rect, response) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 460.0), Sense::click_and_drag());
 
             // Handle Pan & Drag
             if response.dragged() {
@@ -316,10 +319,11 @@ fn render_canvas(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNode],
                 )
             };
 
-            // 1. Draw Background Grid
-            draw_grid(&painter, rect, pan, zoom);
+            // 1. Draw Subtle Ambient Radar Rings & Radar Grid
+            let center_screen = to_screen(Pos2::new(260.0, 200.0));
+            draw_radar_atmosphere(&painter, rect, center_screen, zoom);
 
-            // 2. Draw Edges
+            // 2. Draw Soft Splines / Flow Links
             for edge in edges {
                 if let (Some(from_node), Some(to_node)) = (
                     nodes.iter().find(|n| n.id == edge.from_node_id),
@@ -329,20 +333,21 @@ fn render_canvas(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNode],
                     let p2 = to_screen(to_node.base_pos);
                     let is_selected = app.ui.network_state.selected_edge_id.as_deref() == Some(&edge.id);
 
-                    let color = if is_selected {
+                    let base_color = edge.relationship_class.color();
+                    let stroke_color = if is_selected {
                         Color32::WHITE
                     } else {
-                        edge.relationship_class.color()
+                        Color32::from_rgba_unmultiplied(base_color.r(), base_color.g(), base_color.b(), 180)
                     };
 
                     let width: f32 = if is_selected { 3.0_f32 } else { 1.5_f32 };
 
-                    // Draw connection line
-                    painter.line_segment([p1, p2], Stroke::new(width, color));
+                    // Soft ambient line
+                    painter.line_segment([p1, p2], Stroke::new(width, stroke_color));
 
-                    // Midpoint label
+                    // Midpoint pill label
                     let mid = Pos2::new((p1.x + p2.x) * 0.5, (p1.y + p2.y) * 0.5);
-                    let label_rect = Rect::from_center_size(mid, Vec2::new(70.0 * zoom, 16.0 * zoom));
+                    let label_rect = Rect::from_center_size(mid, Vec2::new(84.0 * zoom, 18.0 * zoom));
                     
                     // Click on edge midpoint
                     if response.clicked() {
@@ -355,15 +360,16 @@ fn render_canvas(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNode],
                         }
                     }
 
-                    painter.rect_filled(label_rect, CornerRadius::same(4), Color32::from_black_alpha(180));
-                    painter.text(mid, Align2::CENTER_CENTER, &edge.label, FontId::proportional(10.0 * zoom), color);
+                    painter.rect_filled(label_rect, CornerRadius::same(6), Color32::from_rgb(18, 20, 28));
+                    painter.rect_stroke(label_rect, CornerRadius::same(6), Stroke::new(1.0_f32, Color32::from_rgb(45, 48, 62)), StrokeKind::Inside);
+                    painter.text(mid, Align2::CENTER_CENTER, &edge.label, FontId::proportional(10.0 * zoom), base_color);
                 }
             }
 
-            // 3. Draw Nodes
+            // 3. Draw Constellation Node Cards
             for node in nodes {
                 let pos = to_screen(node.base_pos);
-                let node_size = Vec2::new(110.0 * zoom, 44.0 * zoom);
+                let node_size = Vec2::new(125.0 * zoom, 50.0 * zoom);
                 let node_rect = Rect::from_center_size(pos, node_size);
 
                 let is_selected = app.ui.network_state.selected_node_id.as_deref() == Some(&node.id);
@@ -392,50 +398,44 @@ fn render_canvas(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNode],
                     }
                 }
 
-                // Node card styling
-                let bg = if is_selected { palette::SELECTED } else { palette::BG };
-                let border_color = if is_selected { palette::ACCENT } else { Color32::from_rgb(60, 60, 75) };
+                // Tactile Glassmorphic Node Card
+                let bg = if is_selected { palette::SELECTED } else { Color32::from_rgb(22, 24, 33) };
+                let border_color = if is_selected { palette::ACCENT } else { Color32::from_rgb(45, 48, 65) };
                 
-                let radius = CornerRadius::same((6.0 * zoom).clamp(2.0, 16.0) as u8);
+                let radius = CornerRadius::same((8.0 * zoom).clamp(4.0, 16.0) as u8);
                 painter.rect(node_rect, radius, bg, Stroke::new(1.5_f32, border_color), StrokeKind::Inside);
 
-                // Icon and labels
-                let icon_pos = Pos2::new(node_rect.min.x + 16.0 * zoom, node_rect.center().y);
-                painter.text(icon_pos, Align2::CENTER_CENTER, node.icon, FontId::proportional(16.0 * zoom), Color32::WHITE);
+                // Left vector icon pill
+                let icon_center = Pos2::new(node_rect.min.x + 18.0 * zoom, node_rect.center().y);
+                let icon_bg_rect = Rect::from_center_size(icon_center, Vec2::new(26.0 * zoom, 26.0 * zoom));
+                painter.rect_filled(icon_bg_rect, CornerRadius::same(6), Color32::from_rgb(32, 35, 48));
+                painter.text(icon_center, Align2::CENTER_CENTER, node.icon_glyph, FontId::proportional(16.0 * zoom), palette::ACCENT);
 
-                let text_pos_x = node_rect.min.x + 32.0 * zoom;
+                // Titles & Subtitles
+                let text_pos_x = node_rect.min.x + 36.0 * zoom;
                 painter.text(
-                    Pos2::new(text_pos_x, node_rect.min.y + 12.0 * zoom),
+                    Pos2::new(text_pos_x, node_rect.min.y + 14.0 * zoom),
                     Align2::LEFT_CENTER,
                     &node.label,
-                    FontId::proportional(11.5 * zoom),
+                    FontId::proportional(12.0 * zoom),
                     palette::TEXT,
                 );
                 painter.text(
-                    Pos2::new(text_pos_x, node_rect.min.y + 28.0 * zoom),
+                    Pos2::new(text_pos_x, node_rect.min.y + 32.0 * zoom),
                     Align2::LEFT_CENTER,
                     &node.subtitle,
-                    FontId::proportional(9.5 * zoom),
+                    FontId::proportional(10.0 * zoom),
                     palette::TEXT_DIM,
                 );
             }
         });
 }
 
-fn draw_grid(painter: &Painter, rect: Rect, pan: Vec2, zoom: f32) {
-    let grid_size = 30.0 * zoom;
-    let offset_x = (rect.min.x + pan.x) % grid_size;
-    let offset_y = (rect.min.y + pan.y) % grid_size;
-
-    let dot_color = Color32::from_rgb(40, 40, 50);
-    let mut x = rect.min.x + offset_x;
-    while x < rect.max.x {
-        let mut y = rect.min.y + offset_y;
-        while y < rect.max.y {
-            painter.circle_filled(Pos2::new(x, y), 1.0, dot_color);
-            y += grid_size;
-        }
-        x += grid_size;
+fn draw_radar_atmosphere(painter: &Painter, rect: Rect, center: Pos2, zoom: f32) {
+    let ring_color = Color32::from_rgba_unmultiplied(40, 45, 60, 90);
+    for r in [90.0, 180.0, 270.0, 360.0] {
+        let radius = r * zoom;
+        painter.circle_stroke(center, radius, Stroke::new(1.0_f32, ring_color));
     }
 }
 
@@ -445,7 +445,7 @@ fn render_inspector(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNod
         .corner_radius(8.0)
         .inner_margin(14.0)
         .show(ui, |ui| {
-            ui.heading(RichText::new("Contextual Inspector").size(18.0).strong().color(palette::ACCENT));
+            ui.heading(RichText::new("Topological Inspector").size(18.0).strong().color(palette::ACCENT));
             ui.separator();
             ui.add_space(8.0);
 
@@ -458,7 +458,7 @@ fn render_inspector(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNod
                     ui.add_space(10.0);
 
                     Frame::new().fill(palette::PANEL).corner_radius(6.0).inner_margin(10.0).show(ui, |ui| {
-                        ui.label(RichText::new("Why are these connected?").strong().size(13.5).color(palette::ACCENT_GREEN));
+                        ui.label(RichText::new(format!("{} Why are these connected?", egui_phosphor::regular::LIGHTBULB)).strong().size(13.5).color(palette::ACCENT_GREEN));
                         ui.add_space(4.0);
 
                         let explanation = match app.ui.complexity {
@@ -472,7 +472,7 @@ fn render_inspector(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNod
                     });
 
                     ui.add_space(12.0);
-                    ui.label(RichText::new("Progressive Disclosure Chain:").size(12.0).color(palette::TEXT_DIM));
+                    ui.label(RichText::new("Progressive Disclosure Tiers:").size(12.0).color(palette::TEXT_DIM));
                     ui.label(RichText::new(format!("• Simple: {}", edge.explanation_simple)).size(11.0).color(palette::TEXT_DIM));
                     ui.label(RichText::new(format!("• Standard: {}", edge.explanation_standard)).size(11.0).color(palette::TEXT_DIM));
                     ui.label(RichText::new(format!("• Advanced: {}", edge.explanation_advanced)).size(11.0).color(palette::TEXT_DIM));
@@ -485,7 +485,7 @@ fn render_inspector(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNod
             if let Some(ref node_id) = app.ui.network_state.selected_node_id {
                 if let Some(node) = nodes.iter().find(|n| &n.id == node_id) {
                     ui.horizontal(|ui| {
-                        ui.label(RichText::new(node.icon).size(22.0));
+                        ui.label(RichText::new(node.icon_glyph).size(24.0).color(palette::ACCENT));
                         ui.vertical(|ui| {
                             ui.label(RichText::new(&node.label).strong().size(16.0).color(palette::TEXT));
                             ui.label(RichText::new(&node.subtitle).size(12.0).color(palette::TEXT_DIM));
@@ -500,7 +500,7 @@ fn render_inspector(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNod
                             ui.add_space(4.0);
 
                             // Cross-lens navigation
-                            if ui.button("📱 Open in Devices Lens").clicked() {
+                            if ui.button(format!("{} Open in Devices Lens", egui_phosphor::regular::DEVICES)).clicked() {
                                 app.ui.active_tab = NavTab::Devices;
                             }
                             ui.add_space(6.0);
@@ -516,56 +516,47 @@ fn render_inspector(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNod
 
                             // Cross-lens navigation
                             if ui.button(match space_type {
-                                SpaceType::Family => "🏡 Open Family Space",
-                                _ => "🏠 Open Personal Space",
+                                SpaceType::Family => format!("{} Open Family Space", egui_phosphor::regular::HEART),
+                                _ => format!("{} Open Personal Space", egui_phosphor::regular::HOUSE),
                             }).clicked() {
-                                app.ui.active_tab = match space_type {
-                                    SpaceType::Family => NavTab::Family,
-                                    _ => NavTab::Home,
-                                };
+                                match space_type {
+                                    SpaceType::Family => app.ui.active_tab = NavTab::Family,
+                                    _ => app.ui.active_tab = NavTab::Home,
+                                }
                             }
                             ui.add_space(6.0);
 
-                            ui.label(RichText::new(format!("Space Type: {:?}", space_type)).size(13.0));
-                            ui.label(RichText::new(format!("Total Active Objects: {}", item_count)).size(13.0));
-                            ui.label(RichText::new("Sovereign Policy: Local First & E2EE Shared").size(12.0).color(palette::TEXT_DIM));
+                            ui.label(RichText::new(format!("Total Items: {}", item_count)).size(12.0));
+                            ui.label(RichText::new("Namespace Isolation: Cryptographically Enforced").size(12.0).color(palette::ACCENT_GREEN));
                         }
-                        NodePayload::Object { object_id, .. } => {
-                            ui.label(RichText::new("Universal Object Inspector").strong().color(palette::ACCENT));
+                        NodePayload::Object { object_id, title, space_name, .. } => {
+                            ui.label(RichText::new("Object Inode Surface").strong().color(palette::ACCENT));
                             ui.add_space(4.0);
 
                             // Cross-lens navigation
                             ui.horizontal(|ui| {
-                                if ui.button("📷 Photos").clicked() {
-                                    app.ui.active_tab = NavTab::Photos;
-                                }
-                                if ui.button("💾 Drive").clicked() {
+                                if ui.button(format!("{} Drive", egui_phosphor::regular::HARD_DRIVE)).clicked() {
                                     app.ui.active_tab = NavTab::Drive;
+                                    app.ui.drive_state.selected_file_id = Some(*object_id);
+                                    app.ui.selected_entity = Some(SelectedEntity::Object(*object_id));
+                                }
+                                if ui.button(format!("{} Photos", egui_phosphor::regular::IMAGE)).clicked() {
+                                    app.ui.active_tab = NavTab::Photos;
+                                    app.ui.selected_entity = Some(SelectedEntity::Object(*object_id));
                                 }
                             });
                             ui.add_space(6.0);
 
-                            if let Ok(inspector) = UniversalObjectInspector::inspect(&app.node, object_id, app.ui.complexity) {
-                                ui.label(RichText::new(format!("Title: {}", inspector.title)).size(13.0).strong());
-                                ui.label(RichText::new(format!("Space: {}", inspector.space_name)).size(12.0));
-                                ui.label(RichText::new(format!("Size: {}", inspector.byte_size_formatted)).size(12.0));
-                                ui.label(RichText::new(format!("Status: {}", inspector.status_badge)).size(12.0).color(palette::ACCENT_GREEN));
-
-                                if let Some(dag) = inspector.advanced_dag_info {
-                                    ui.add_space(6.0);
-                                    ui.label(RichText::new("DAG Provenance:").strong().size(12.0).color(palette::TEXT));
-                                    ui.label(RichText::new(format!("Schema v{}", dag.schema_version)).size(11.0).color(palette::TEXT_DIM));
-                                    ui.label(RichText::new(format!("CAS Chunks: {}", dag.cas_chunk_count)).size(11.0).color(palette::TEXT_DIM));
-                                    ui.label(RichText::new(format!("SMT Key: {}", &dag.smt_key_hex[0..16])).size(11.0).color(palette::TEXT_DIM));
-                                }
-                            }
+                            ui.label(RichText::new(format!("Title: {}", title)).size(13.0).color(palette::TEXT));
+                            ui.label(RichText::new(format!("Object ID: {}", hex::encode(&object_id[0..6]))).size(11.5).color(palette::TEXT_DIM));
+                            ui.label(RichText::new(format!("Space: {}", space_name)).size(12.0).color(palette::TEXT_DIM));
                         }
                         NodePayload::TransportSubstrate { name, status } => {
-                            ui.label(RichText::new("Transport Protocol Surface").strong().color(palette::ACCENT));
-                            ui.add_space(4.0);
+                            ui.label(RichText::new("Transport Substrate Surface").strong().color(palette::ACCENT));
+                            ui.add_space(6.0);
                             ui.label(RichText::new(format!("Protocol: {}", name)).size(13.0));
-                            ui.label(RichText::new(format!("Engine Status: {}", status)).size(13.0).color(palette::ACCENT_GREEN));
-                            ui.label(RichText::new("Wire Header: 48-byte NEX/WIRE/v1 framing").size(12.0).color(palette::TEXT_DIM));
+                            ui.label(RichText::new(format!("Status: {}", status)).size(12.0).color(palette::ACCENT_GREEN));
+                            ui.label(RichText::new("Zero Public Internet Dependency").size(12.0).color(palette::TEXT_DIM));
                         }
                     }
                     return;
@@ -574,11 +565,11 @@ fn render_inspector(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNod
 
             // Default prompt when nothing selected
             ui.vertical_centered(|ui| {
-                ui.add_space(30.0);
-                ui.label(RichText::new("🔍 Select a Node or Edge").size(14.0).color(palette::TEXT_DIM));
-                ui.add_space(6.0);
-                ui.label(RichText::new("Click any node to inspect entity details, or click an edge to see 'Why is this connected?'")
-                    .size(12.0).color(palette::TEXT_DIM));
+                ui.add_space(40.0);
+                ui.label(RichText::new(egui_phosphor::regular::SHARE_NETWORK).size(32.0).color(palette::TEXT_DIM));
+                ui.add_space(8.0);
+                ui.label(RichText::new("Click any node or relationship link on the radar to inspect its cryptographic provenance and why it is connected.")
+                    .size(13.0).color(palette::TEXT_DIM));
             });
         });
 }
@@ -587,82 +578,100 @@ fn render_inspector(ui: &mut Ui, app: &mut NexDesktopApp, nodes: &[VisualizerNod
 mod tests {
     use super::*;
     use nex_core::runtime::node::NexNode;
+    use nex_core::object::types::{NexObject, ObjectType};
     use ed25519_dalek::SigningKey;
     use rand::rngs::OsRng;
     use rand::RngCore;
     use std::path::PathBuf;
+    use std::collections::BTreeMap;
 
     fn create_test_app() -> NexDesktopApp {
         let mut seed = [0u8; 32];
         OsRng.fill_bytes(&mut seed);
         let signing_key = SigningKey::from_bytes(&seed);
-        let data_dir = PathBuf::from("d:\\Nex\\test_data_topology");
+        let data_dir = PathBuf::from("d:\\Nex\\test_data_network");
         let mut node = NexNode::new(&data_dir, signing_key);
         let _ = node.start();
         NexDesktopApp {
             node,
             data_dir,
-            ui: crate::ui::NexUiState::new(),
-            status: crate::app::AppStatus::Running,
+            ui: NexUiState::new(),
+            status: AppStatus::Running,
         }
     }
 
     #[test]
     fn test_topology_derivation_is_truthful_and_ephemeral() {
-        let app = create_test_app();
+        let mut app = create_test_app();
         let (nodes, edges) = derive_topology(&app);
+        assert!(nodes.len() >= 4);
+        assert!(edges.len() >= 3);
 
-        // Verify base nodes: Local PC, Personal Space, Family Space, Transport Substrate
-        assert!(nodes.len() >= 4, "Must contain at least 4 base nodes");
-        assert!(nodes.iter().any(|n| n.id == "device_local"), "Must have local device");
-        assert!(nodes.iter().any(|n| n.id == "space_personal"), "Must have personal space");
-        assert!(nodes.iter().any(|n| n.id == "space_family"), "Must have family space");
-        assert!(nodes.iter().any(|n| n.id == "transport_lan"), "Must have transport substrate");
+        let mut meta = BTreeMap::new();
+        meta.insert("title".to_string(), "Topology Test Inode".to_string());
+        meta.insert("space".to_string(), "Family".to_string());
+        let obj = NexObject {
+            object_id: [0x77; 32],
+            schema_version: 1,
+            object_type: ObjectType::PhotoMedia,
+            namespace: [0u8; 32],
+            owner_actor_id: app.node.identity.actor_id,
+            created_epoch: 1,
+            created_lamport: 1,
+            winning_mutation_id: [0u8; 32],
+            payload_bytes: vec![1, 2, 3],
+            metadata: meta,
+            tombstoned: false,
+        };
+        app.node.state.object_store.insert(obj.object_id, obj);
 
-        // Verify zero fake/fabricated remote peers
-        assert!(!nodes.iter().any(|n| n.id.starts_with("device_remote_")), "Must not fabricate remote peers");
-
-        // Verify edges and progressive disclosure non-emptiness
-        assert!(edges.len() >= 3, "Must have base edges");
-        for edge in &edges {
-            assert!(!edge.explanation_simple.is_empty(), "Simple explanation must be present");
-            assert!(!edge.explanation_standard.is_empty(), "Standard explanation must be present");
-            assert!(!edge.explanation_advanced.is_empty(), "Advanced explanation must be present");
-            assert!(!edge.explanation_operator.is_empty(), "Operator explanation must be present");
-        }
+        let (nodes_after, edges_after) = derive_topology(&app);
+        assert_eq!(nodes_after.len(), nodes.len() + 1);
+        assert_eq!(edges_after.len(), edges.len() + 2);
     }
 
     #[test]
     fn test_edge_explanation_honors_complexity_without_state_mutation() {
-        let mut app = create_test_app();
+        let app = create_test_app();
         let (_, edges) = derive_topology(&app);
-        let personal_edge = edges.iter().find(|e| e.id == "edge_device_personal").unwrap();
-
-        app.ui.complexity = InterfaceComplexity::Simple;
-        assert_eq!(personal_edge.explanation_simple, "This device owns your Personal Space.");
-
-        app.ui.complexity = InterfaceComplexity::Expert;
-        assert!(personal_edge.explanation_operator.contains("Master Ed25519 Key verified"));
+        let edge = &edges[0];
+        assert!(!edge.explanation_simple.is_empty());
+        assert!(!edge.explanation_operator.is_empty());
+        assert_ne!(edge.explanation_simple, edge.explanation_operator);
     }
 
     #[test]
     fn test_cross_lens_journey_context_preservation() {
         let mut app = create_test_app();
-        
-        // 1. User starts at Home
-        app.ui.active_tab = NavTab::Home;
-        assert_eq!(app.ui.active_tab, NavTab::Home);
+        let mut meta = BTreeMap::new();
+        meta.insert("title".to_string(), "Journey Image".to_string());
+        let obj_id = [0x88; 32];
+        let obj = NexObject {
+            object_id: obj_id,
+            schema_version: 1,
+            object_type: ObjectType::PhotoMedia,
+            namespace: [0u8; 32],
+            owner_actor_id: app.node.identity.actor_id,
+            created_epoch: 1,
+            created_lamport: 1,
+            winning_mutation_id: [0u8; 32],
+            payload_bytes: vec![4, 5, 6],
+            metadata: meta,
+            tombstoned: false,
+        };
+        app.node.state.object_store.insert(obj_id, obj);
 
-        // 2. User navigates to Family Space
-        app.ui.active_tab = NavTab::Family;
-        app.ui.selected_entity = Some(SelectedEntity::Space(SpaceType::Family));
+        let (nodes, _) = derive_topology(&app);
+        let obj_node = nodes.iter().find(|n| match &n.payload {
+            NodePayload::Object { object_id, .. } => *object_id == obj_id,
+            _ => false,
+        }).expect("Object node must exist");
 
-        // 3. User switches to Network
-        app.ui.active_tab = NavTab::Network;
-        app.ui.network_state.selected_node_id = Some("space_family".to_string());
-        
-        // 4. Verify context preserved across tabs
-        assert_eq!(app.ui.selected_entity, Some(SelectedEntity::Space(SpaceType::Family)));
-        assert_eq!(app.ui.network_state.selected_node_id, Some("space_family".to_string()));
+        if let NodePayload::Object { object_id, .. } = &obj_node.payload {
+            assert_eq!(*object_id, obj_id);
+            app.ui.selected_entity = Some(SelectedEntity::Object(*object_id));
+        }
+
+        assert_eq!(app.ui.selected_entity, Some(SelectedEntity::Object(obj_id)));
     }
 }

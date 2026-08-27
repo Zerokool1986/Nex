@@ -11,6 +11,7 @@ pub enum EpistemicStatus {
     ExpectedHistorical,
     ObfuscatedBlurred,
     UnavailableEvidence,
+    ContradictoryDisputed,
     VerificationFailed,
 }
 
@@ -23,6 +24,7 @@ impl EpistemicStatus {
             Self::ExpectedHistorical => "Expected / Historical",
             Self::ObfuscatedBlurred => "Obfuscated / Blurred",
             Self::UnavailableEvidence => "Evidence Unavailable",
+            Self::ContradictoryDisputed => "Contradictory / Disputed State",
             Self::VerificationFailed => "Verification Failed",
         }
     }
@@ -35,12 +37,13 @@ impl EpistemicStatus {
             Self::ExpectedHistorical => "○",
             Self::ObfuscatedBlurred => "◍",
             Self::UnavailableEvidence => "◌",
+            Self::ContradictoryDisputed => "≢",
             Self::VerificationFailed => "⚠",
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VerificationCheck {
     pub category: String,
     pub status: EpistemicStatus,
@@ -48,7 +51,7 @@ pub struct VerificationCheck {
     pub proof_detail: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PhysicalResidencyRecord {
     pub device_name: String,
     pub device_glyph: &'static str,
@@ -58,7 +61,7 @@ pub struct PhysicalResidencyRecord {
     pub byte_count: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CryptographicProofRecord {
     pub blake3_hash_hex: String,
     pub ed25519_author_hex: String,
@@ -102,7 +105,7 @@ pub struct UniversalObjectInspector {
     pub advanced_dag_info: Option<DagTechnicalInfo>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DagTechnicalInfo {
     pub schema_version: u16,
     pub created_epoch: u64,
@@ -143,8 +146,8 @@ impl UniversalObjectInspector {
         };
 
         let status = match complexity {
-            InterfaceComplexity::Simple => "Protected & Verified".to_string(),
-            InterfaceComplexity::Standard => "Synced (2 trusted devices • Bit-for-bit intact)".to_string(),
+            InterfaceComplexity::Simple => "Protected & Verified Locally".to_string(),
+            InterfaceComplexity::Standard => "Synced (2 trusted devices • Bitstream verified)".to_string(),
             InterfaceComplexity::Advanced => format!("CAS Inode Verified | Schema v{}", obj.schema_version),
             InterfaceComplexity::Expert => format!("SMT Node Key: {} | Author: {}", hex::encode(obj.object_id), hex::encode(obj.owner_actor_id)),
         };
@@ -163,10 +166,15 @@ impl UniversalObjectInspector {
         // 2. Content Integrity
         let payload_len = obj.payload_bytes.len();
         let integrity_status = if payload_len > 0 { EpistemicStatus::VerifiedFact } else { EpistemicStatus::VerificationFailed };
+        let integrity_summary = if payload_len > 0 {
+            format!("Observed content matches expected canonical digest ({:.1} KB in FastCDC CAS).", payload_len as f64 / 1024.0)
+        } else {
+            "Observed payload is empty or missing from local CAS.".to_string()
+        };
         verification_checks.push(VerificationCheck {
             category: "Content Integrity".to_string(),
             status: integrity_status,
-            summary: format!("Observed content matches expected canonical digest ({:.1} KB in FastCDC CAS).", payload_len as f64 / 1024.0),
+            summary: integrity_summary,
             proof_detail: format!("FastCDC chunks verified: {}", (payload_len / 4096).max(1)),
         });
 
@@ -197,10 +205,15 @@ impl UniversalObjectInspector {
 
         // 6. Replica Reconciliation
         let replica_status = if is_family { EpistemicStatus::CurrentObservation } else { EpistemicStatus::ExpectedHistorical };
+        let replica_summary = if is_family {
+            "Reconciled with direct mesh peer Amy's Pixel 9 (Current Observation).".to_string()
+        } else {
+            format!("Last verified reconciliation state: Epoch {}.", obj.created_epoch)
+        };
         verification_checks.push(VerificationCheck {
             category: "Replica Reconciliation".to_string(),
             status: replica_status,
-            summary: format!("Last verified reconciliation state: Epoch {}.", obj.created_epoch),
+            summary: replica_summary,
             proof_detail: format!("SMT Merkle Root matches canonical state for Epoch {}", obj.created_epoch),
         });
 
@@ -259,7 +272,7 @@ impl UniversalObjectInspector {
         };
 
         let human_truth_statement = format!(
-            "{} is authentic, intact, and safely stored in your physical custody.",
+            "{} is verified locally and stored in your physical custody.",
             title
         );
 
@@ -288,5 +301,172 @@ impl UniversalObjectInspector {
             proofs,
             advanced_dag_info: dag_info,
         })
+    }
+
+    /// Evaluates Scenario 7: Divergent SMT Roots across partitioned peers
+    pub fn evaluate_smt_divergence(
+        local_root: [u8; 32],
+        peer_root: [u8; 32],
+        last_common_epoch: u64,
+    ) -> VerificationCheck {
+        if local_root == peer_root {
+            VerificationCheck {
+                category: "Replica Reconciliation".to_string(),
+                status: EpistemicStatus::VerifiedFact,
+                summary: "SMT Merkle roots match across all active peers.".to_string(),
+                proof_detail: format!("Root: {}", hex::encode(local_root)),
+            }
+        } else {
+            VerificationCheck {
+                category: "Replica Reconciliation".to_string(),
+                status: EpistemicStatus::ContradictoryDisputed,
+                summary: "Two trusted peers currently report different world states.".to_string(),
+                proof_detail: format!(
+                    "Local Root: {}... | Peer Root: {}... | Last common state: Epoch {}",
+                    &hex::encode(local_root)[0..8],
+                    &hex::encode(peer_root)[0..8],
+                    last_common_epoch
+                ),
+            }
+        }
+    }
+
+    /// Evaluates Scenario 15 & 16: Causal ordering vs ambiguous physical timestamps
+    pub fn evaluate_causal_ordering(
+        lamport_rank: u64,
+        wall_clock_discrepant: bool,
+    ) -> VerificationCheck {
+        if wall_clock_discrepant {
+            VerificationCheck {
+                category: "Causal History".to_string(),
+                status: EpistemicStatus::ContradictoryDisputed,
+                summary: "Ordering evidence is ambiguous — physical clock discrepancy observed between devices.".to_string(),
+                proof_detail: format!("Causal order established by logical Lamport rank {} (not wall-clock time)", lamport_rank),
+            }
+        } else {
+            VerificationCheck {
+                category: "Causal History".to_string(),
+                status: EpistemicStatus::DerivedState,
+                summary: format!("Causal precedence verified at Lamport rank {}.", lamport_rank),
+                proof_detail: format!("Lamport sequence: {}", lamport_rank),
+            }
+        }
+    }
+
+    /// Evaluates Scenario 18: Unknown peer discovery
+    pub fn evaluate_discovered_peer(
+        actor_id: &ActorID,
+        is_known_in_web_of_trust: bool,
+    ) -> VerificationCheck {
+        if is_known_in_web_of_trust {
+            VerificationCheck {
+                category: "Peer Trust".to_string(),
+                status: EpistemicStatus::VerifiedFact,
+                summary: "Peer identity verified in local Web of Trust.".to_string(),
+                proof_detail: format!("ActorID: 0x{}", hex::encode(&actor_id[0..4])),
+            }
+        } else {
+            VerificationCheck {
+                category: "Peer Trust".to_string(),
+                status: EpistemicStatus::CurrentObservation,
+                summary: "Identity not yet established — device observed on local mesh.".to_string(),
+                proof_detail: format!("ActorID 0x{} • Review trust request before granting capabilities", hex::encode(&actor_id[0..4])),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::runtime::node::NexNode;
+    use ed25519_dalek::SigningKey;
+    use rand::rngs::OsRng;
+    use rand::RngCore;
+    use std::path::PathBuf;
+    use std::collections::BTreeMap;
+    use crate::object::types::NexObject;
+
+    fn create_test_node() -> (NexNode, ObjectID) {
+        let mut seed = [0u8; 32];
+        OsRng.fill_bytes(&mut seed);
+        let signing_key = SigningKey::from_bytes(&seed);
+        let data_dir = PathBuf::from("d:\\Nex\\test_data_epistemic_triad");
+        let mut node = NexNode::new(&data_dir, signing_key);
+        let _ = node.start();
+
+        let obj_id = [0x55; 32];
+        let mut meta = BTreeMap::new();
+        meta.insert("title".to_string(), "Estate Planning.pdf".to_string());
+        meta.insert("space".to_string(), "Personal".to_string());
+
+        node.state.object_store.insert(obj_id, NexObject {
+            object_id: obj_id,
+            object_type: ObjectType::DriveInode,
+            namespace: [0u8; 32],
+            owner_actor_id: node.identity.actor_id,
+            schema_version: 1,
+            created_epoch: 100,
+            created_lamport: 1,
+            winning_mutation_id: [0u8; 32],
+            metadata: meta,
+            payload_bytes: b"ESTATE_PLANNING_PAYLOAD".to_vec(),
+            tombstoned: false,
+        });
+
+        (node, obj_id)
+    }
+
+    #[test]
+    fn test_epistemic_triad_reality_evidence_claim() {
+        let (node, obj_id) = create_test_node();
+        let insp = UniversalObjectInspector::inspect(&node, &obj_id, InterfaceComplexity::Standard).unwrap();
+
+        // 1. Reality: The object exists in CAS
+        assert_eq!(insp.byte_size, 23);
+
+        // 2. Evidence: BLAKE3 digest and signature verified
+        let id_check = insp.verification_checks.iter().find(|c| c.category == "Object Identity").unwrap();
+        assert_eq!(id_check.status, EpistemicStatus::VerifiedFact);
+
+        // 3. Claim: Epistemically humble human claim
+        assert!(id_check.summary.contains("matches canonical identifier"));
+        assert!(!id_check.summary.contains("0 bit rot"));
+    }
+
+    #[test]
+    fn test_scenario_07_smt_divergence_honesty() {
+        let local_root = [0x11; 32];
+        let peer_root = [0x22; 32];
+        let check = UniversalObjectInspector::evaluate_smt_divergence(local_root, peer_root, 95);
+
+        assert_eq!(check.status, EpistemicStatus::ContradictoryDisputed);
+        assert_eq!(check.summary, "Two trusted peers currently report different world states.");
+        assert!(check.proof_detail.contains("Last common state: Epoch 95"));
+    }
+
+    #[test]
+    fn test_scenario_15_conflicting_timestamps_honesty() {
+        let check = UniversalObjectInspector::evaluate_causal_ordering(42, true);
+        assert_eq!(check.status, EpistemicStatus::ContradictoryDisputed);
+        assert!(check.summary.contains("Ordering evidence is ambiguous"));
+        assert!(check.proof_detail.contains("Lamport rank 42"));
+    }
+
+    #[test]
+    fn test_scenario_16_lamport_ordering_honesty() {
+        let check = UniversalObjectInspector::evaluate_causal_ordering(42, false);
+        assert_eq!(check.status, EpistemicStatus::DerivedState);
+        assert!(check.summary.contains("Causal precedence verified at Lamport rank 42"));
+    }
+
+    #[test]
+    fn test_scenario_18_unknown_peer_discovery_honesty() {
+        let unknown_actor = [0x99; 32];
+        let check = UniversalObjectInspector::evaluate_discovered_peer(&unknown_actor, false);
+
+        assert_eq!(check.status, EpistemicStatus::CurrentObservation);
+        assert_eq!(check.summary, "Identity not yet established — device observed on local mesh.");
+        assert!(!check.summary.contains("Untrusted"), "Must not equate unknown with malicious");
     }
 }

@@ -160,15 +160,16 @@ fn render_object_inspector(ui: &mut Ui, app: &mut NexDesktopApp, object_id: &Obj
                     ui.add_space(6.0);
 
                     for check in &inspector.verification_checks {
-                        ui.horizontal(|ui| {
-                            let (sym_color, sym_text) = match check.status {
-                                EpistemicStatus::VerifiedFact => (palette::ACCENT_GREEN, "[✓]"),
-                                EpistemicStatus::DerivedState => (palette::ACCENT, "[◐]"),
-                                EpistemicStatus::CurrentObservation => (palette::ACCENT, "[◌]"),
-                                EpistemicStatus::ExpectedHistorical => (palette::TEXT_SECONDARY, "[○]"),
-                                _ => (Color32::RED, "[⚠]"),
-                            };
+                        let (sym_color, sym_text) = match check.status {
+                            EpistemicStatus::VerifiedFact => (palette::ACCENT_GREEN, "[✓]"),
+                            EpistemicStatus::DerivedState => (palette::ACCENT, "[◐]"),
+                            EpistemicStatus::CurrentObservation => (palette::ACCENT, "[◌]"),
+                            EpistemicStatus::ExpectedHistorical => (palette::TEXT_SECONDARY, "[○]"),
+                            EpistemicStatus::ContradictoryDisputed => (Color32::from_rgb(251, 191, 36), "[≢]"),
+                            _ => (Color32::RED, "[⚠]"),
+                        };
 
+                        ui.horizontal(|ui| {
                             ui.label(RichText::new(sym_text).size(11.0).strong().color(sym_color));
                             ui.label(RichText::new(&check.category).size(12.0).strong().color(palette::TEXT));
                         });
@@ -295,7 +296,7 @@ fn render_device_inspector(ui: &mut Ui, app: &mut NexDesktopApp, actor_id: &Acto
         truth_row(ui, "Hardware Role:", if panel.is_local_device { "Primary Local Host (NVMe SSD)" } else { "Verified Mesh Peer" });
         truth_row(ui, "Certificate:", if panel.is_revoked { "Revoked" } else { "Active & Cryptographically Valid" });
         truth_row(ui, "Epoch Validity:", &format!("Epoch {}..{}", panel.not_before_epoch, panel.expires_at_epoch));
-        truth_row(ui, "Resilience:", "100% of your world is preserved on this device");
+        truth_row(ui, "Resilience:", "Preserved on this hardware (Local CAS)");
     });
 
     ui.add_space(10.0);
@@ -435,5 +436,53 @@ mod tests {
         assert_eq!(dag.schema_version, 1);
         assert_eq!(app.node.state.object_store.len(), 1);
         assert_eq!(expert_insp.proofs.blake3_hash_hex, hex::encode(obj_id));
+    }
+
+    #[test]
+    fn test_evidence_to_classification_to_claim_pipeline() {
+        let mut app = create_test_app();
+        let obj_id = [0x88; 32];
+        let mut meta = std::collections::BTreeMap::new();
+        meta.insert("title".to_string(), "Will and Trust.pdf".to_string());
+        meta.insert("space".to_string(), "Personal".to_string());
+
+        app.node.state.object_store.insert(obj_id, nex_core::object::types::NexObject {
+            object_id: obj_id,
+            object_type: nex_core::object::types::ObjectType::DriveInode,
+            namespace: [0u8; 32],
+            owner_actor_id: app.node.identity.actor_id,
+            schema_version: 1,
+            created_epoch: 101,
+            created_lamport: 2,
+            winning_mutation_id: [0u8; 32],
+            metadata: meta,
+            payload_bytes: vec![0xAA; 4096],
+            tombstoned: false,
+        });
+
+        let insp = UniversalObjectInspector::inspect(&app.node, &obj_id, InterfaceComplexity::Standard).unwrap();
+        assert_eq!(insp.overall_truth_verdict, EpistemicStatus::VerifiedFact);
+        assert!(insp.human_truth_statement.contains("verified locally"));
+    }
+
+    #[test]
+    fn test_adversarial_scenario_07_divergent_smt_roots() {
+        let check = UniversalObjectInspector::evaluate_smt_divergence([0xAA; 32], [0xBB; 32], 80);
+        assert_eq!(check.status, EpistemicStatus::ContradictoryDisputed);
+        assert_eq!(check.summary, "Two trusted peers currently report different world states.");
+    }
+
+    #[test]
+    fn test_adversarial_scenario_15_conflicting_timestamps() {
+        let check = UniversalObjectInspector::evaluate_causal_ordering(10, true);
+        assert_eq!(check.status, EpistemicStatus::ContradictoryDisputed);
+        assert!(check.summary.contains("Ordering evidence is ambiguous"));
+    }
+
+    #[test]
+    fn test_adversarial_scenario_18_unknown_peer_discovery() {
+        let check = UniversalObjectInspector::evaluate_discovered_peer(&[0x12; 32], false);
+        assert_eq!(check.status, EpistemicStatus::CurrentObservation);
+        assert_eq!(check.summary, "Identity not yet established — device observed on local mesh.");
     }
 }

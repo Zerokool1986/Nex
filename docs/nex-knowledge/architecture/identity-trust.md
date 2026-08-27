@@ -93,7 +93,21 @@ Verification strictly enforces:
 
 ## 5. Social Recovery via Shamir Threshold Scheme
 
-`[IMPLEMENTATION OBSERVATION]`
-In `nex-core/src/identity/recovery/shamir.rs` and `ceremony.rs`:
-- Splits 32-byte master seed into $N$ guardian shares over Galois Field $GF(256)$ with threshold $K$.
-- Social recovery ceremony requires $K$ valid guardian signatures and enforces a verifiable timelock delay before re-keying.
+`[IMPL][TEST][UI]`
+In `nex-core/src/identity/recovery/`:
+- Splits 32-byte master seed into $N$ guardian shares over Galois Field $GF(2^8)$ with threshold $K$ (`shamir.rs`).
+- Social recovery ceremony collects $K$ valid shares and enforces anti-hijack time-lock (`ceremony.rs`).
+- `DeviceRecoveryWorkflow` reauthorizes replacement devices and registers lost devices into CRL without changing root `ActorID` (`device_recovery.rs`, `recovery.rs`).
+
+---
+
+## 6. Petname Directory & Web-of-Trust Evidence Status
+
+### `[IMPL][TEST]` Flat Petname Directory
+In `nex-core/src/apps/platform.rs`:
+- Provides local, subjective petname alias mapping `String -> ActorID`.
+- Direct resolution for user-assigned contact names.
+
+### `[SPEC — NOT IMPLEMENTED]` Transitive Trust & Score Dampening
+- Transitive Web-of-Trust graph traversal with multiplicative score dampening ($\text{Score}_A \times \text{Score}_B \times 0.5$) is a theoretical specification and is **NOT implemented** in code.
+- Sybil resistance currently relies strictly on local invitation gating, out-of-band SAS pairing, and transport rate-limiting/jailing.

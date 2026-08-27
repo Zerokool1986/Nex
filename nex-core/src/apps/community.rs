@@ -142,6 +142,7 @@ pub struct NexCommunityEngine<A: NexAppApi> {
     pub replies: BTreeMap<ObjectID, CommunityReply>,
     pub roles: BTreeMap<ObjectID, BTreeMap<ActorID, CommunityRole>>,
     pub reactions: BTreeMap<ObjectID, BTreeMap<String, BTreeSet<ActorID>>>,
+    pub banned_actors: BTreeMap<ObjectID, BTreeSet<ActorID>>,
 }
 
 impl<A: NexAppApi> NexCommunityEngine<A> {
@@ -155,7 +156,63 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
             replies: BTreeMap::new(),
             roles: BTreeMap::new(),
             reactions: BTreeMap::new(),
+            banned_actors: BTreeMap::new(),
         }
+    }
+
+    pub fn is_banned(&self, community_id: &ObjectID, actor: &ActorID) -> bool {
+        self.banned_actors.get(community_id)
+            .map(|bans| bans.contains(actor))
+            .unwrap_or(false)
+    }
+
+    pub fn ban_member(
+        &mut self,
+        community_id: ObjectID,
+        target_actor: ActorID,
+        _epoch: u64,
+    ) -> Result<(), String> {
+        let caller_role = self.get_role(&community_id, &self.local_actor_id);
+        if caller_role < CommunityRole::Admin {
+            return Err("Unauthorized: Must be at least Admin to ban members".into());
+        }
+        let target_role = self.get_role(&community_id, &target_actor);
+        if caller_role <= target_role && caller_role != CommunityRole::Owner {
+            return Err("Unauthorized: Cannot ban a member with equal or higher role".into());
+        }
+        if target_actor == self.local_actor_id {
+            return Err("InvalidOperation: Cannot ban oneself".into());
+        }
+
+        // 1. Remove from active roles
+        if let Some(comm_roles) = self.roles.get_mut(&community_id) {
+            comm_roles.remove(&target_actor);
+        }
+
+        // 2. Insert into banned_actors
+        self.banned_actors.entry(community_id)
+            .or_default()
+            .insert(target_actor);
+
+        Ok(())
+    }
+
+    pub fn unban_member(
+        &mut self,
+        community_id: ObjectID,
+        target_actor: ActorID,
+        _epoch: u64,
+    ) -> Result<(), String> {
+        let caller_role = self.get_role(&community_id, &self.local_actor_id);
+        if caller_role < CommunityRole::Admin {
+            return Err("Unauthorized: Must be at least Admin to unban members".into());
+        }
+
+        if let Some(bans) = self.banned_actors.get_mut(&community_id) {
+            bans.remove(&target_actor);
+        }
+
+        Ok(())
     }
 
     pub fn assign_role(
@@ -164,6 +221,10 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
         target_actor: ActorID,
         role: CommunityRole,
     ) -> Result<(), String> {
+        if self.is_banned(&community_id, &target_actor) {
+            return Err("Unauthorized: Cannot assign role to banned actor without unbanning first".into());
+        }
+
         let caller_role = self.get_role(&community_id, &self.local_actor_id);
         if caller_role < CommunityRole::Admin {
             return Err("Unauthorized: Must be at least Admin to assign roles".into());
@@ -179,6 +240,9 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
     }
 
     pub fn get_role(&self, community_id: &ObjectID, actor: &ActorID) -> CommunityRole {
+        if self.is_banned(community_id, actor) {
+            return CommunityRole::Guest;
+        }
         if let Some(comm) = self.communities.get(community_id) {
             if comm.owner_actor_id == *actor {
                 return CommunityRole::Owner;
@@ -238,6 +302,10 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
         is_private: bool,
         _proof: Option<CapabilityProof>,
     ) -> Result<ObjectID, String> {
+        if self.is_banned(&community_id, &self.local_actor_id) {
+            return Err("Unauthorized: Banned from community".into());
+        }
+
         let role = self.get_role(&community_id, &self.local_actor_id);
         if role < CommunityRole::Admin {
             return Err("Unauthorized: Must be Admin to create channel".into());
@@ -282,6 +350,12 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
         epoch: u64,
         _proof: Option<CapabilityProof>,
     ) -> Result<ObjectID, String> {
+        let channel = self.channels.get(&channel_id)
+            .ok_or_else(|| "Channel not found".to_string())?;
+        if self.is_banned(&channel.community_id, &self.local_actor_id) {
+            return Err("Unauthorized: Banned from community".into());
+        }
+
         let mut hasher = Sha256::new();
         hasher.update(DOMAIN_COMMUNITY_POST);
         hasher.update(&channel_id);
@@ -329,6 +403,13 @@ impl<A: NexAppApi> NexCommunityEngine<A> {
     ) -> Result<ObjectID, String> {
         let post = self.posts.get(&post_id)
             .ok_or_else(|| "Post not found".to_string())?;
+
+        let channel = self.channels.get(&post.channel_id)
+            .ok_or_else(|| "Channel not found".to_string())?;
+
+        if self.is_banned(&channel.community_id, &self.local_actor_id) {
+            return Err("Unauthorized: Banned from community".into());
+        }
         if post.is_locked {
             return Err("Thread is locked".into());
         }

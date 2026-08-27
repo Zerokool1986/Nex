@@ -1,0 +1,25 @@
+{
+    "version": "nex-protocol-v1.0-independent",
+    "vectors": [
+        {
+            "category": "Identifier",
+            "test_name": "ObjectID_Acyclic_Derivation",
+            "expected_object_id_hex": "820158204deb59726c445961e841401f70dd155608be3e0a39ece17e0724f64eead95e40"
+        },
+        {
+            "category": "Identifier",
+            "test_name": "MutationID_Acyclic_Derivation",
+            "expected_mutation_id_hex": "82015820fd2df8f3e79cae0818ae613e1316d77c690bc4482bee8b266a5dce06fad97326"
+        },
+        {
+            "category": "CRDT",
+            "test_name": "StateCommitment_Acyclic_Hashing",
+            "expected_state_commitment_hex": "82015820b8285a89c355a6173ea623a834fabe6b22e570b6328bc881c8b27a980617862e"
+        },
+        {
+            "category": "Crypto",
+            "test_name": "COSE_ToBeSigned_Generation",
+            "expected_tbs_hex": "844a5369676e61747572653143a1013240582aa2015824820158204deb59726c445961e841401f70dd155608be3e0a39ece17e0724f64eead95e400780"
+        }
+    ]
+}

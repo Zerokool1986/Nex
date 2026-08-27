@@ -1,0 +1,88 @@
+{
+    "version": "nex-protocol-v0.6",
+    "vectors": [
+        {
+            "category": "CRDT",
+            "test_name": "CausalOrderKey_Lexicographic_Tiebreaker",
+            "description": "Validates max_lex((LamportRank, MutationID)) correctly falls back to MutationID when ranks are tied",
+            "inputs": {
+                "lamport_a": 5,
+                "id_a": "0000000000000000000000000000000000000000000000000000000000000000",
+                "val_a": "X",
+                "lamport_b": 5,
+                "id_b": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "val_b": "Y"
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_semantic_state": {
+                "winner": "Y",
+                "reason": "Lexicographic ID Tiebreaker"
+            },
+            "should_reject": false
+        },
+        {
+            "category": "Protocol",
+            "test_name": "AWORSet_StateCommitment_Bytes",
+            "description": "Hashes the exact CRDT wire structure of Adds and Tombstones (RFC 8949 Option A)",
+            "inputs": {
+                "adds": {
+                    "tag1": "ElementData"
+                },
+                "tombstones": [
+                    "tag_old"
+                ]
+            },
+            "expected_cbor_hex": "a26441646473a164746167316b456c656d656e74446174616a546f6d6273746f6e657381677461675f6f6c64",
+            "expected_hash_hex": "201e6a2b8e3a89e1b203c9d72e6b7d2f9b2d8471c1b9b9c9f417a8e569949925",
+            "expected_semantic_state": null,
+            "should_reject": false
+        },
+        {
+            "category": "CBOR",
+            "test_name": "AWORSet_Tombstone_Duplicate_Rejection",
+            "description": "Rejects an AWORSet state containing duplicate tags in the Tombstones array",
+            "inputs": {
+                "tombstones": [
+                    "tag_x",
+                    "tag_x"
+                ]
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_semantic_state": null,
+            "should_reject": true
+        },
+        {
+            "category": "Authority",
+            "test_name": "Capability_MutationType_Intersection",
+            "description": "Rejects if MutationType is not an element of Capability.Permissions",
+            "inputs": {
+                "capability_permissions": [
+                    1
+                ],
+                "mutation_type": 2
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_semantic_state": null,
+            "should_reject": true
+        },
+        {
+            "category": "Cryptography",
+            "test_name": "Anchor_Equivocation_Detection",
+            "description": "Detects an Authority signing two different StateCommitments for the same PrunableFrontier",
+            "inputs": {
+                "anchor_1_commitment": "hash_a",
+                "anchor_2_commitment": "hash_b",
+                "frontier": "frontier_1"
+            },
+            "expected_cbor_hex": null,
+            "expected_hash_hex": null,
+            "expected_semantic_state": {
+                "event": "AUTHORITY_EQUIVOCATION"
+            },
+            "should_reject": false
+        }
+    ]
+}

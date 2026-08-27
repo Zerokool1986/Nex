@@ -1,0 +1,4 @@
+{
+  "summary": "Fix test_r71_32_d to call node.stop() before restarting.",
+  "updatedAt": "2026-08-23T02:51:18.906618700Z"
+}

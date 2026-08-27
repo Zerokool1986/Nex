@@ -1,0 +1,4 @@
+{
+  "summary": "Implement causal ancestor walk in generate_batches_for_peer in sync/anti_entropy.rs.",
+  "updatedAt": "2026-08-21T05:09:28.890425Z"
+}

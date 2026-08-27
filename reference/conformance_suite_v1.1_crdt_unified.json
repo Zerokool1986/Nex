@@ -1,0 +1,142 @@
+{
+    "version": "nex-protocol-v1.1-crdt-unified",
+    "description": "CRDT topological evaluations enforcing Unified LWW RegisterState semantics and Object-Global Epoch transitions.",
+    "vectors": [
+        {
+            "category": "RegisterState",
+            "test_name": "Unified_LWW_Add_Vs_Remove",
+            "description": "Add and Remove compete in same LWW register. B has larger MutationID, so B wins.",
+            "inputs": {
+                "operations": [
+                    {
+                        "id": "A",
+                        "type": "ADD",
+                        "key": "Key1",
+                        "payload": "Data_A",
+                        "lamport": 1,
+                        "epoch": 1,
+                        "mutation_id": "820158201111111111111111111111111111111111111111111111111111111111111111",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "B",
+                        "type": "REMOVE",
+                        "key": "Key1",
+                        "lamport": 1,
+                        "epoch": 1,
+                        "mutation_id": "820158202222222222222222222222222222222222222222222222222222222222222222",
+                        "op_index": 0
+                    }
+                ]
+            },
+            "expected_state_projection": {
+                "AddsMap": {},
+                "TombstonesArr": [
+                    "820158203def52e5e85a86e489c0ebb96e9deb404aa30e327f8ded4c1981d5b293d3ffec"
+                ]
+            }
+        },
+        {
+            "category": "RegisterState",
+            "test_name": "Unified_LWW_Remove_Vs_Add",
+            "description": "Add and Remove compete in same LWW register. B has larger MutationID, so B wins.",
+            "inputs": {
+                "operations": [
+                    {
+                        "id": "A",
+                        "type": "REMOVE",
+                        "key": "Key1",
+                        "lamport": 1,
+                        "epoch": 1,
+                        "mutation_id": "820158201111111111111111111111111111111111111111111111111111111111111111",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "B",
+                        "type": "ADD",
+                        "key": "Key1",
+                        "payload": "Data_B",
+                        "lamport": 1,
+                        "epoch": 1,
+                        "mutation_id": "820158202222222222222222222222222222222222222222222222222222222222222222",
+                        "op_index": 0
+                    }
+                ]
+            },
+            "expected_state_projection": {
+                "AddsMap": {
+                    "Key1": {
+                        "op_tag": "820158209052bb867e327786d032d12bb46ff1800ed2974b2a5c1d33b439cd35927e9c27",
+                        "payload": "Data_B"
+                    }
+                },
+                "TombstonesArr": []
+            }
+        },
+        {
+            "category": "Epoch",
+            "test_name": "Object_Global_Epoch_Transition",
+            "description": "Resurrect jumps the object epoch globally. Older epoch states (E) are ignored. K2 is successfully added post-resurrection.",
+            "inputs": {
+                "operations": [
+                    {
+                        "id": "A",
+                        "type": "ADD",
+                        "key": "Key1",
+                        "payload": "Data_A",
+                        "lamport": 1,
+                        "epoch": 1,
+                        "mutation_id": "820158201111111111111111111111111111111111111111111111111111111111111111",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "B",
+                        "type": "REMOVE",
+                        "key": "Key2",
+                        "lamport": 1,
+                        "epoch": 1,
+                        "mutation_id": "820158202222222222222222222222222222222222222222222222222222222222222222",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "C",
+                        "type": "RESURRECT",
+                        "lamport": 2,
+                        "epoch": 2,
+                        "mutation_id": "820158201111111111111111111111111111111111111111111111111111111111111111",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "D",
+                        "type": "ADD",
+                        "key": "Key2",
+                        "payload": "Data_D",
+                        "lamport": 3,
+                        "epoch": 2,
+                        "mutation_id": "820158201111111111111111111111111111111111111111111111111111111111111111",
+                        "op_index": 0
+                    },
+                    {
+                        "id": "E",
+                        "type": "ADD",
+                        "key": "Key3",
+                        "payload": "Data_E",
+                        "lamport": 4,
+                        "epoch": 1,
+                        "mutation_id": "820158202222222222222222222222222222222222222222222222222222222222222222",
+                        "op_index": 0
+                    }
+                ]
+            },
+            "expected_state_projection": {
+                "AddsMap": {
+                    "Key2": {
+                        "op_tag": "820158204aaea0c91d4f5bdef8eb16d6b37adcc1f29de488ac5aad1bd6890a7b17117e37",
+                        "payload": "Data_D"
+                    }
+                },
+                "TombstonesArr": []
+            }
+        }
+    ]
+}

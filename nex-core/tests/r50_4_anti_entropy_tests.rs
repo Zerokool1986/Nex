@@ -711,3 +711,4 @@ fn test_r50_4_k_wal_recovery_scale_with_10k_history() {
 
     node.stop().unwrap();
 }
+

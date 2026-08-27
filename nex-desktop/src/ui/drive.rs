@@ -67,7 +67,7 @@ pub fn render(ui: &mut Ui, app: &mut NexDesktopApp) {
             app.ui.drive_state.active_space_filter = Some(SpaceType::Personal);
         }
         let family_selected = app.ui.drive_state.active_space_filter == Some(SpaceType::Family);
-        if ui.selectable_label(family_selected, "🏠 Family").clicked() {
+        if ui.selectable_label(family_selected, "🏡 Family").clicked() {
             app.ui.drive_state.active_space_filter = Some(SpaceType::Family);
         }
 
@@ -348,7 +348,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 100,
             created_lamport: 1,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: meta1,
             payload_bytes: b"2026 Sovereign Family Budget: Confirmed".to_vec(),
             tombstoned: false,
@@ -371,7 +371,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 101,
             created_lamport: 2,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: meta2,
             payload_bytes: vec![0xFF; 2048],
             tombstoned: false,
@@ -387,7 +387,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 99,
             created_lamport: 0,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: BTreeMap::new(),
             payload_bytes: vec![],
             tombstoned: true,
@@ -530,7 +530,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 102,
             created_lamport: 3,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: BTreeMap::new(),
             payload_bytes: vec![],
             tombstoned: false,

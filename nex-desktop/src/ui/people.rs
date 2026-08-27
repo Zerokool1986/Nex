@@ -1,4 +1,4 @@
-use egui::{Ui, RichText, Frame, Color32, Sense};
+﻿use egui::{Ui, RichText, Frame, Color32, Sense};
 use nex_core::identity::types::ActorID;
 use nex_core::object::types::ObjectID;
 use nex_core::runtime::shell::SpaceType;
@@ -86,7 +86,7 @@ pub fn render(ui: &mut Ui, app: &mut NexDesktopApp) {
             app.ui.people_state.active_filter_family_only = false;
         }
         let family_selected = app.ui.people_state.active_filter_family_only;
-        if ui.selectable_label(family_selected, "🏠 Family Only").clicked() {
+        if ui.selectable_label(family_selected, "🏡 Family Only").clicked() {
             app.ui.people_state.active_filter_family_only = true;
         }
     });
@@ -355,7 +355,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 100,
             created_lamport: 1,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: meta,
             payload_bytes: vec![0xAA; 512],
             tombstoned: false,

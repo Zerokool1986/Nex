@@ -1,0 +1,4 @@
+{
+  "summary": "Fix ObjectType variants and actor_id comparison in runtime/panels.rs.",
+  "updatedAt": "2026-08-23T02:08:28.281742800Z"
+}

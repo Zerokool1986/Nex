@@ -1,4 +1,4 @@
-use egui::{Ui, RichText, Frame, Color32, Vec2, ProgressBar, Sense, FontId};
+﻿use egui::{Ui, RichText, Frame, Color32, Vec2, ProgressBar, Sense, FontId};
 use nex_core::object::types::{ObjectID, ObjectType, NexObject};
 use nex_core::runtime::shell::SpaceType;
 use crate::app::NexDesktopApp;
@@ -93,7 +93,7 @@ pub fn render(ui: &mut Ui, app: &mut NexDesktopApp) {
             app.ui.media_state.active_space_filter = Some(SpaceType::Personal);
         }
         let family_selected = app.ui.media_state.active_space_filter == Some(SpaceType::Family);
-        if ui.selectable_label(family_selected, "🏠 Family").clicked() {
+        if ui.selectable_label(family_selected, "🏡 Family").clicked() {
             app.ui.media_state.active_space_filter = Some(SpaceType::Family);
         }
     });
@@ -427,7 +427,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 1,
             created_lamport: 1,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: meta,
             payload_bytes: vec![0xFF; 2048],
             tombstoned: false,

@@ -80,7 +80,7 @@ fn test_r71_7_e_idempotent_sync_resume_after_interruption() {
             schema_version: 1,
             created_epoch: 1,
             created_lamport: 1,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: BTreeMap::new(),
             payload_bytes: b"large chunk payload to synchronize".to_vec(),
             tombstoned: false,

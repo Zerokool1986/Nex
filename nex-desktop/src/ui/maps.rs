@@ -1,4 +1,4 @@
-use egui::{Ui, RichText, Frame, Color32, Vec2, Pos2, Sense, Stroke, FontId};
+﻿use egui::{Ui, RichText, Frame, Color32, Vec2, Pos2, Sense, Stroke, FontId};
 use nex_core::object::types::{ObjectID, ObjectType, NexObject};
 use nex_core::runtime::shell::SpaceType;
 use nex_core::runtime::experience::InterfaceComplexity;
@@ -75,7 +75,7 @@ pub fn render(ui: &mut Ui, app: &mut NexDesktopApp) {
             app.ui.maps_state.active_space_filter = Some(SpaceType::Personal);
         }
         let family_selected = app.ui.maps_state.active_space_filter == Some(SpaceType::Family);
-        if ui.selectable_label(family_selected, "🏠 Family").clicked() {
+        if ui.selectable_label(family_selected, "🏡 Family").clicked() {
             app.ui.maps_state.active_space_filter = Some(SpaceType::Family);
         }
 
@@ -186,7 +186,7 @@ fn render_map_viewport(ui: &mut Ui, app: &mut NexDesktopApp, objects: &[&Project
                 let x = center.x + (lon_step as f32) * 60.0_f32;
                 if x >= canvas_rect.min.x && x <= canvas_rect.max.x {
                     painter.line_segment(
-                        [Pos2::new(x, canvas_rect.min.y), Pos2::new(x, canvas_rect.max.x)],
+                        [Pos2::new(x, canvas_rect.min.y), Pos2::new(x, canvas_rect.max.y)],
                         Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(255, 255, 255, 12)),
                     );
                 }
@@ -393,7 +393,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 100,
             created_lamport: 1,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: meta1,
             payload_bytes: vec![0xAA; 512],
             tombstoned: false,
@@ -411,7 +411,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 101,
             created_lamport: 2,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: meta2,
             payload_bytes: vec![0xBB; 128],
             tombstoned: false,
@@ -462,7 +462,7 @@ mod tests {
             schema_version: 1,
             created_epoch: 102,
             created_lamport: 3,
-            winning_mutation_id: [0u8; 32],
+        winning_mutation_id: [0u8; 32],
             metadata: meta,
             payload_bytes: vec![0xCC; 256],
             tombstoned: false,

@@ -77,21 +77,34 @@ impl NexUiState {
 /// Colour palette — Calm Sovereignty / Native Precision Hybrid
 pub mod palette {
     use egui::Color32;
-    pub const BG: Color32 = Color32::from_rgb(13, 14, 18);            // Pure Obsidian Void (#0D0E12)
-    pub const SIDEBAR: Color32 = Color32::from_rgb(19, 20, 26);       // Graphite Elevation (#13141A)
-    pub const PANEL: Color32 = Color32::from_rgb(26, 28, 37);         // Slate Container Panel (#1A1C25)
-    pub const PANEL_HOVER: Color32 = Color32::from_rgb(32, 35, 47);   // Interactive Hover Fill (#20232F)
-    pub const ACCENT: Color32 = Color32::from_rgb(91, 141, 246);      // Radiant Cobalt (#5B8DF6)
-    pub const ACCENT_GREEN: Color32 = Color32::from_rgb(52, 211, 153); // Emerald Trust & Verified SMT (#34D399)
-    pub const ACCENT_AMBER: Color32 = Color32::from_rgb(251, 191, 36); // Amber Local Only (#FBBF24)
-    pub const TEXT: Color32 = Color32::from_rgb(245, 245, 250);       // High Contrast White (#F5F5FA)
-    pub const TEXT_DIM: Color32 = Color32::from_rgb(150, 153, 172);   // Muted Slate Metadata (#9699AC)
-    pub const SELECTED: Color32 = Color32::from_rgb(38, 48, 77);      // Selection Slate Glow
+    // ── Foundation surfaces ──
+    pub const BG: Color32 = Color32::from_rgb(12, 12, 16);              // Near-black void (#0C0C10)
+    pub const SIDEBAR: Color32 = Color32::from_rgb(16, 16, 22);         // Sidebar surface (#101016)
+    pub const PANEL: Color32 = Color32::from_rgb(22, 23, 30);           // Elevated container (#16171E)
+    pub const PANEL_HOVER: Color32 = Color32::from_rgb(30, 32, 42);     // Hover lift (#1E202A)
+    pub const CARD: Color32 = Color32::from_rgb(26, 28, 36);            // Card surface (#1A1C24)
+    pub const BORDER_SUBTLE: Color32 = Color32::from_rgb(38, 40, 52);   // Subtle divider (#262834)
+
+    // ── Brand & Accent ──
+    pub const ACCENT: Color32 = Color32::from_rgb(99, 144, 250);        // Softer cobalt (#6390FA)
+    pub const ACCENT_SOFT: Color32 = Color32::from_rgb(99, 144, 250);   // Same for hover glow
+    pub const ACCENT_GREEN: Color32 = Color32::from_rgb(52, 211, 153);  // Emerald trust (#34D399)
+    pub const ACCENT_AMBER: Color32 = Color32::from_rgb(251, 191, 36);  // Amber local (#FBBF24)
+
+    // ── Typography ──
+    pub const TEXT: Color32 = Color32::from_rgb(240, 240, 248);         // Primary text (#F0F0F8)
+    pub const TEXT_SECONDARY: Color32 = Color32::from_rgb(155, 158, 178); // Secondary text (#9B9EB2)
+    pub const TEXT_DIM: Color32 = Color32::from_rgb(100, 103, 122);     // Tertiary/muted (#64677A)
+
+    // ── Interactive states ──
+    pub const SELECTED: Color32 = Color32::from_rgb(30, 38, 64);        // Selection glow (#1E2640)
+    pub const NAV_ACTIVE: Color32 = Color32::from_rgb(99, 144, 250);    // Active nav text = accent
+    pub const NAV_INACTIVE: Color32 = Color32::from_rgb(140, 143, 160); // Inactive nav (#8C8FA0)
 }
 
 /// Top-level render — called every frame by eframe
 pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
-    // Set refined visual style once
+    // Set refined visual style
     let mut visuals = egui::Visuals::dark();
     visuals.panel_fill = palette::BG;
     visuals.window_fill = palette::BG;
@@ -100,10 +113,16 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
     visuals.widgets.hovered.bg_fill = palette::PANEL_HOVER;
     visuals.widgets.active.bg_fill = palette::ACCENT;
     visuals.widgets.noninteractive.bg_fill = palette::PANEL;
-    visuals.widgets.inactive.corner_radius = egui::CornerRadius::same(6);
-    visuals.widgets.hovered.corner_radius = egui::CornerRadius::same(6);
-    visuals.widgets.active.corner_radius = egui::CornerRadius::same(6);
+    visuals.widgets.inactive.corner_radius = egui::CornerRadius::same(8);
+    visuals.widgets.hovered.corner_radius = egui::CornerRadius::same(8);
+    visuals.widgets.active.corner_radius = egui::CornerRadius::same(8);
     visuals.override_text_color = Some(palette::TEXT);
+
+    // Reduce default spacing for tighter, more polished feel
+    let mut style = (*ctx.style()).clone();
+    style.spacing.item_spacing = Vec2::new(8.0, 4.0);
+    style.spacing.button_padding = Vec2::new(8.0, 4.0);
+    ctx.set_style(style);
     ctx.set_visuals(visuals);
 
     // If app failed to start, show error and bail
@@ -115,7 +134,9 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
             });
         });
         return;
-    }    // Detect Ctrl+K / Cmd+K global shortcut
+    }
+
+    // Detect Ctrl+K / Cmd+K global shortcut
     if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::K)) {
         app.ui.command_palette_open = !app.ui.command_palette_open;
         if app.ui.command_palette_open {
@@ -123,121 +144,154 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
         }
     }
 
-    // Top bar with Master Brand Identity, Command Bar Trigger, Truthful Sync Beacon & Tactile Experience Segmented Control
-    TopBottomPanel::top("top_bar")
-        .frame(Frame::new().fill(palette::SIDEBAR).inner_margin(10.0))
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // LEFT NAVIGATION COLUMN — Identity-anchored, spatially organized
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    SidePanel::left("sidebar")
+        .resizable(false)
+        .exact_width(200.0)
+        .frame(Frame::new()
+            .fill(palette::SIDEBAR)
+            .inner_margin(egui::Margin { left: 14, right: 14, top: 16, bottom: 12 })
+            .stroke(Stroke::new(1.0, palette::BORDER_SUBTLE))
+        )
+        .show(ctx, |ui| {
+            // ── Node Identity Header ──
+            ui.horizontal(|ui| {
+                ui.add(egui::Image::new(egui::include_image!("../../assets/nex_brand_icon.png"))
+                    .max_height(24.0)
+                    .max_width(24.0));
+                ui.vertical(|ui| {
+                    ui.label(RichText::new("NEX").strong().size(16.0).color(palette::TEXT));
+                    let sync = app.sync_status();
+                    let (color, dot) = if sync.contains("Online") {
+                        (palette::ACCENT_GREEN, "●")
+                    } else if sync.contains("Degraded") {
+                        (palette::ACCENT_AMBER, "●")
+                    } else {
+                        (palette::TEXT_DIM, "○")
+                    };
+                    ui.label(RichText::new(format!("{} {}", dot, sync.replace("● ", "").replace("⚠ ", "").replace("○ ", "")))
+                        .size(11.0).color(color));
+                });
+            });
+
+            ui.add_space(16.0);
+
+            // ── Quick Search Trigger ──
+            let search_response = ui.add_sized(
+                Vec2::new(ui.available_width(), 32.0),
+                egui::Button::new(
+                    RichText::new(format!("{}  Search…", egui_phosphor::regular::MAGNIFYING_GLASS))
+                        .size(12.5).color(palette::TEXT_DIM)
+                )
+                .fill(palette::PANEL)
+                .corner_radius(8.0)
+                .stroke(Stroke::new(1.0, palette::BORDER_SUBTLE)),
+            );
+            if search_response.clicked() {
+                app.ui.command_palette_open = true;
+                app.ui.command_palette_query.clear();
+            }
+
+            ui.add_space(20.0);
+
+            // ── Navigation Sections ──
+            // Spaces
+            section_header(ui, "Spaces");
+            nav_item(ui, app, NavTab::Home,     egui_phosphor::regular::HOUSE_SIMPLE, "Personal");
+            nav_item(ui, app, NavTab::Family,   egui_phosphor::regular::USERS_THREE, "Family");
+
+            ui.add_space(16.0);
+
+            // Lenses
+            section_header(ui, "Lenses");
+            nav_item(ui, app, NavTab::Photos,   egui_phosphor::regular::IMAGE, "Photos");
+            nav_item(ui, app, NavTab::Drive,    egui_phosphor::regular::FOLDER_SIMPLE, "Files");
+            nav_item(ui, app, NavTab::Media,    egui_phosphor::regular::PLAY_CIRCLE, "Media");
+            nav_item(ui, app, NavTab::Maps,     egui_phosphor::regular::MAP_TRIFOLD, "Maps");
+
+            ui.add_space(16.0);
+
+            // Mesh
+            section_header(ui, "Mesh");
+            nav_item(ui, app, NavTab::People,   egui_phosphor::regular::IDENTIFICATION_CARD, "People");
+            nav_item(ui, app, NavTab::Devices,  egui_phosphor::regular::DESKTOP_TOWER, "Devices");
+            nav_item(ui, app, NavTab::Network,  egui_phosphor::regular::GRAPH, "Topology");
+
+            // Bottom-anchored settings
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                ui.add_space(4.0);
+
+                // Experience slider as compact pill at bottom
+                ui.horizontal(|ui| {
+                    let tiers = [
+                        (InterfaceComplexity::Simple, "S"),
+                        (InterfaceComplexity::Standard, "Std"),
+                        (InterfaceComplexity::Advanced, "Adv"),
+                        (InterfaceComplexity::Expert, "Op"),
+                    ];
+                    for (tier, label) in tiers {
+                        let is_active = app.ui.complexity == tier;
+                        let text_color = if is_active { palette::TEXT } else { palette::TEXT_DIM };
+                        let bg = if is_active { palette::SELECTED } else { Color32::TRANSPARENT };
+                        if ui.add(
+                            egui::Button::new(RichText::new(label).size(10.5).color(text_color))
+                                .fill(bg)
+                                .corner_radius(4.0)
+                                .min_size(Vec2::new(28.0, 22.0))
+                        ).clicked() {
+                            app.ui.complexity = tier;
+                        }
+                    }
+                });
+                ui.add_space(4.0);
+
+                // Settings link
+                nav_item(ui, app, NavTab::Settings, egui_phosphor::regular::GEAR_SIX, "Settings");
+
+                ui.add_space(4.0);
+                // Thin separator
+                ui.add(egui::Separator::default().spacing(1.0));
+            });
+        });
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // BOTTOM BAR — Minimal, contextual status
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    TopBottomPanel::bottom("status_bar")
+        .frame(Frame::new()
+            .fill(palette::SIDEBAR)
+            .inner_margin(egui::Margin { left: 14, right: 14, top: 6, bottom: 6 })
+            .stroke(Stroke::new(1.0, palette::BORDER_SUBTLE))
+        )
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                // Official Interlocking Master Logo Mark & Sanctuary Tagline
-                ui.add(egui::Image::new(egui::include_image!("../../assets/nex_brand_icon.png"))
-                    .max_height(22.0)
-                    .max_width(22.0));
-                ui.label(RichText::new("NEX").strong().size(19.0).color(palette::TEXT));
-                ui.label(RichText::new("• Sovereign Sanctuary").size(12.0).color(palette::TEXT_DIM));
+                let obj_count = app.object_count();
+                let msg = if !app.ui.status_msg.is_empty() {
+                    app.ui.status_msg.clone()
+                } else if obj_count == 0 {
+                    "Ready".to_string()
+                } else {
+                    format!("{} objects  •  Local sovereign node  •  Ctrl+K to search", obj_count)
+                };
+                ui.label(RichText::new(msg).color(palette::TEXT_DIM).size(11.0));
 
-                // Global Sovereign Command Bar Button (Raycast/Linear style)
-                ui.add_space(8.0);
-                if ui.button(RichText::new(format!("{}  Search or Jump...  Ctrl+K", egui_phosphor::regular::MAGNIFYING_GLASS)).size(12.0).color(palette::TEXT_DIM))
-                    .clicked()
-                {
-                    app.ui.command_palette_open = true;
-                    app.ui.command_palette_query.clear();
-                }
-                
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    // Tactile Segmented Control for Global Experience Slider
-                    Frame::new()
-                        .fill(palette::PANEL)
-                        .corner_radius(6.0)
-                        .inner_margin(egui::Margin::symmetric(4, 3))
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                let c = app.ui.complexity;
-                                if ui.selectable_label(c == InterfaceComplexity::Simple, "Simple").clicked() {
-                                    app.ui.complexity = InterfaceComplexity::Simple;
-                                }
-                                if ui.selectable_label(c == InterfaceComplexity::Standard, "Standard").clicked() {
-                                    app.ui.complexity = InterfaceComplexity::Standard;
-                                }
-                                if ui.selectable_label(c == InterfaceComplexity::Advanced, "Advanced").clicked() {
-                                    app.ui.complexity = InterfaceComplexity::Advanced;
-                                }
-                                if ui.selectable_label(c == InterfaceComplexity::Expert, "Operator").clicked() {
-                                    app.ui.complexity = InterfaceComplexity::Expert;
-                                }
-                            });
-                        });
-
-                    ui.separator();
-
-                    // Truthful Sync State Beacon
-                    let sync = app.sync_status();
-                    let (color, icon_glyph) = if sync.contains("Online") {
-                        (palette::ACCENT_GREEN, egui_phosphor::regular::SHIELD_CHECK)
-                    } else if sync.contains("Degraded") {
-                        (palette::ACCENT_AMBER, egui_phosphor::regular::WARNING)
-                    } else {
-                        (palette::TEXT_DIM, egui_phosphor::regular::CLOUD_SLASH)
-                    };
-                    ui.label(RichText::new(format!("{} {}", icon_glyph, sync)).color(color).size(13.0));
-
-                    ui.separator();
-                    ui.label(RichText::new(format!("Actor: {}", app.actor_id_short()))
-                        .color(palette::TEXT_DIM).size(12.0));
+                    ui.label(RichText::new(format!("Node {}", app.actor_id_short()))
+                        .color(palette::TEXT_DIM).size(11.0));
                 });
             });
         });
 
-    // Bottom status bar
-    TopBottomPanel::bottom("status_bar")
-        .frame(Frame::new().fill(palette::SIDEBAR).inner_margin(6.0))
-        .show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                let msg = if app.ui.status_msg.is_empty() {
-                    format!("{} objects in single DAG | Mode: {:?} | No Cloud Dependency | Press Ctrl+K for Launcher", app.object_count(), app.ui.complexity)
-                } else {
-                    app.ui.status_msg.clone()
-                };
-                ui.label(RichText::new(msg).color(palette::TEXT_DIM).size(12.0));
-            });
-        });
-
-    // Left sidebar with Categorized Navigation Rail
-    SidePanel::left("sidebar")
-        .resizable(false)
-        .exact_width(155.0)
-        .frame(Frame::new().fill(palette::SIDEBAR).inner_margin(10.0))
-        .show(ctx, |ui| {
-            ui.add_space(4.0);
-            ui.label(RichText::new("SPACES").size(10.5).strong().color(palette::TEXT_DIM));
-            ui.add_space(2.0);
-            nav_item(ui, app, NavTab::Home,     &format!("{}  Personal", egui_phosphor::regular::HOUSE));
-            nav_item(ui, app, NavTab::Family,   &format!("{}  Family", egui_phosphor::regular::HEART));
-
-            ui.add_space(12.0);
-            ui.label(RichText::new("LENSES").size(10.5).strong().color(palette::TEXT_DIM));
-            ui.add_space(2.0);
-            nav_item(ui, app, NavTab::Photos,   &format!("{}  Photos", egui_phosphor::regular::IMAGE));
-            nav_item(ui, app, NavTab::Drive,    &format!("{}  Drive", egui_phosphor::regular::HARD_DRIVE));
-            nav_item(ui, app, NavTab::Media,    &format!("{}  Media", egui_phosphor::regular::FILM_STRIP));
-            nav_item(ui, app, NavTab::Maps,     &format!("{}  Maps", egui_phosphor::regular::MAP_PIN));
-
-            ui.add_space(12.0);
-            ui.label(RichText::new("MESH & TRUST").size(10.5).strong().color(palette::TEXT_DIM));
-            ui.add_space(2.0);
-            nav_item(ui, app, NavTab::People,   &format!("{}  People", egui_phosphor::regular::USERS));
-            nav_item(ui, app, NavTab::Devices,  &format!("{}  Devices", egui_phosphor::regular::DEVICES));
-            nav_item(ui, app, NavTab::Network,  &format!("{}  Topology", egui_phosphor::regular::SHARE_NETWORK));
-
-            ui.add_space(16.0);
-            ui.separator();
-            ui.add_space(4.0);
-            nav_item(ui, app, NavTab::Settings, &format!("{}  Settings", egui_phosphor::regular::GEAR));
-        });
-
-    // Central canvas panel
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // MAIN CONTENT CANVAS — The living room
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     CentralPanel::default()
-        .frame(Frame::new().fill(palette::BG).inner_margin(18.0))
+        .frame(Frame::new()
+            .fill(palette::BG)
+            .inner_margin(egui::Margin { left: 28, right: 28, top: 24, bottom: 16 })
+        )
         .show(ctx, |ui| {
             match app.ui.active_tab {
                 NavTab::Home     => home::render(ui, app),
@@ -260,24 +314,58 @@ pub fn render(ctx: &Context, app: &mut NexDesktopApp) {
     render_command_palette(ctx, app);
 }
 
+fn section_header(ui: &mut egui::Ui, label: &str) {
+    ui.label(RichText::new(label.to_uppercase())
+        .size(10.0)
+        .color(palette::TEXT_DIM)
+        .strong()
+    );
+    ui.add_space(4.0);
+}
+
 fn render_command_palette(ctx: &Context, app: &mut NexDesktopApp) {
     if !app.ui.command_palette_open {
         return;
     }
 
-    egui::Window::new("Sovereign Command Palette")
+    // Semi-transparent backdrop
+    egui::Area::new(egui::Id::new("palette_backdrop"))
+        .fixed_pos(egui::Pos2::ZERO)
+        .order(egui::Order::Background)
+        .show(ctx, |ui| {
+            let screen = ctx.screen_rect();
+            ui.allocate_exact_size(screen.size(), egui::Sense::click());
+        });
+
+    egui::Window::new("Command Palette")
         .collapsible(false)
         .resizable(false)
         .title_bar(false)
-        .anchor(egui::Align2::CENTER_TOP, Vec2::new(0.0, 100.0))
-        .frame(Frame::new().fill(Color32::from_rgb(18, 20, 28)).corner_radius(10.0).inner_margin(14.0).stroke(Stroke::new(1.0_f32, palette::ACCENT)))
+        .anchor(egui::Align2::CENTER_TOP, Vec2::new(0.0, 80.0))
+        .frame(Frame::new()
+            .fill(Color32::from_rgb(20, 21, 28))
+            .corner_radius(12.0)
+            .inner_margin(16.0)
+            .stroke(Stroke::new(1.0_f32, palette::BORDER_SUBTLE))
+            .shadow(egui::Shadow {
+                offset: [0, 8],
+                blur: 24,
+                spread: 4,
+                color: Color32::from_black_alpha(120),
+            })
+        )
         .show(ctx, |ui| {
-            ui.set_width(480.0);
+            ui.set_width(520.0);
+
+            // Search input
             ui.horizontal(|ui| {
                 ui.label(RichText::new(egui_phosphor::regular::MAGNIFYING_GLASS).size(18.0).color(palette::ACCENT));
+                ui.add_space(4.0);
                 let response = ui.add(egui::TextEdit::singleline(&mut app.ui.command_palette_query)
-                    .hint_text("Type to jump across Spaces, Lenses, Objects, or People... (ESC to close)")
-                    .desired_width(420.0));
+                    .hint_text("Search objects, lenses, people, devices…")
+                    .desired_width(460.0)
+                    .text_color(palette::TEXT)
+                    .font(egui::TextStyle::Body));
                 response.request_focus();
                 if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
                     app.ui.command_palette_open = false;
@@ -285,32 +373,51 @@ fn render_command_palette(ctx: &Context, app: &mut NexDesktopApp) {
             });
 
             ui.add_space(8.0);
-            ui.separator();
-            ui.add_space(6.0);
+            ui.add(egui::Separator::default().spacing(1.0));
+            ui.add_space(8.0);
 
             let query = app.ui.command_palette_query.to_lowercase();
             let mut matched = 0;
 
             // Navigation shortcuts
             let nav_targets = [
-                ("Personal Sanctuary", NavTab::Home, egui_phosphor::regular::HOUSE),
-                ("Family Space", NavTab::Family, egui_phosphor::regular::HEART),
-                ("Photos Lens", NavTab::Photos, egui_phosphor::regular::IMAGE),
-                ("Drive Documents", NavTab::Drive, egui_phosphor::regular::HARD_DRIVE),
-                ("Media Stream", NavTab::Media, egui_phosphor::regular::FILM_STRIP),
-                ("Maps & Geotags", NavTab::Maps, egui_phosphor::regular::MAP_PIN),
-                ("Sovereign People", NavTab::People, egui_phosphor::regular::USERS),
-                ("Devices & Hardware", NavTab::Devices, egui_phosphor::regular::DEVICES),
-                ("Network Topology", NavTab::Network, egui_phosphor::regular::SHARE_NETWORK),
-                ("Node Settings", NavTab::Settings, egui_phosphor::regular::GEAR),
+                ("Personal", NavTab::Home, egui_phosphor::regular::HOUSE_SIMPLE, "Space"),
+                ("Family", NavTab::Family, egui_phosphor::regular::USERS_THREE, "Space"),
+                ("Photos", NavTab::Photos, egui_phosphor::regular::IMAGE, "Lens"),
+                ("Files", NavTab::Drive, egui_phosphor::regular::FOLDER_SIMPLE, "Lens"),
+                ("Media", NavTab::Media, egui_phosphor::regular::PLAY_CIRCLE, "Lens"),
+                ("Maps", NavTab::Maps, egui_phosphor::regular::MAP_TRIFOLD, "Lens"),
+                ("People", NavTab::People, egui_phosphor::regular::IDENTIFICATION_CARD, "Mesh"),
+                ("Devices", NavTab::Devices, egui_phosphor::regular::DESKTOP_TOWER, "Mesh"),
+                ("Topology", NavTab::Network, egui_phosphor::regular::GRAPH, "Mesh"),
+                ("Settings", NavTab::Settings, egui_phosphor::regular::GEAR_SIX, "System"),
             ];
 
-            for (name, tab, icon) in nav_targets {
+            for (name, tab, icon, category) in nav_targets {
                 if query.is_empty() || name.to_lowercase().contains(&query) {
-                    if ui.button(RichText::new(format!("{}  Jump to {}", icon, name)).size(13.5).color(palette::TEXT)).clicked() {
-                        app.ui.active_tab = tab;
-                        app.ui.command_palette_open = false;
-                    }
+                    ui.horizontal(|ui| {
+                        let response = ui.add_sized(
+                            Vec2::new(ui.available_width(), 32.0),
+                            egui::Button::new(
+                                RichText::new(format!("{}  {}", icon, name)).size(13.0).color(palette::TEXT)
+                            )
+                            .fill(Color32::TRANSPARENT)
+                            .corner_radius(6.0),
+                        );
+                        // Show category badge right-aligned inside the button area
+                        let badge_rect = response.rect;
+                        ui.painter().text(
+                            egui::Pos2::new(badge_rect.right() - 8.0, badge_rect.center().y),
+                            egui::Align2::RIGHT_CENTER,
+                            category,
+                            egui::FontId::proportional(10.0),
+                            palette::TEXT_DIM,
+                        );
+                        if response.clicked() {
+                            app.ui.active_tab = tab;
+                            app.ui.command_palette_open = false;
+                        }
+                    });
                     matched += 1;
                     if matched >= 6 { break; }
                 }
@@ -319,9 +426,16 @@ fn render_command_palette(ctx: &Context, app: &mut NexDesktopApp) {
             // Quick Objects
             for (obj_id, obj) in &app.node.state.object_store {
                 if obj.tombstoned { continue; }
-                let title = obj.metadata.get("title").or_else(|| obj.metadata.get("filename")).cloned().unwrap_or_else(|| "Untitled Object".to_string());
+                let title = obj.metadata.get("title").or_else(|| obj.metadata.get("filename")).cloned().unwrap_or_else(|| "Untitled".to_string());
                 if !query.is_empty() && title.to_lowercase().contains(&query) {
-                    if ui.button(RichText::new(format!("{}  Inspect {}", egui_phosphor::regular::FILE_TEXT, title)).size(13.0).color(palette::ACCENT)).clicked() {
+                    if ui.add_sized(
+                        Vec2::new(ui.available_width(), 30.0),
+                        egui::Button::new(
+                            RichText::new(format!("{}  {}", egui_phosphor::regular::FILE_TEXT, title)).size(12.5).color(palette::ACCENT)
+                        )
+                        .fill(Color32::TRANSPARENT)
+                        .corner_radius(6.0),
+                    ).clicked() {
                         app.ui.selected_entity = Some(inspector::SelectedEntity::Object(*obj_id));
                         app.ui.command_palette_open = false;
                     }
@@ -331,24 +445,26 @@ fn render_command_palette(ctx: &Context, app: &mut NexDesktopApp) {
             }
 
             ui.add_space(6.0);
-            ui.horizontal(|ui| {
-                ui.label(RichText::new("↵ Select • ESC Dismiss • Command Launcher Active").size(11.0).color(palette::TEXT_DIM));
-            });
+            ui.label(RichText::new("↵ Select  •  ESC Close  •  ⌘K Toggle").size(10.5).color(palette::TEXT_DIM));
         });
 }
 
-fn nav_item(ui: &mut egui::Ui, app: &mut NexDesktopApp, tab: NavTab, label: &str) {
+fn nav_item(ui: &mut egui::Ui, app: &mut NexDesktopApp, tab: NavTab, icon: &str, label: &str) {
     let selected = app.ui.active_tab == tab;
     let bg = if selected { palette::SELECTED } else { Color32::TRANSPARENT };
-    let text_color = if selected { palette::ACCENT } else { palette::TEXT };
+    let text_color = if selected { palette::NAV_ACTIVE } else { palette::NAV_INACTIVE };
 
     let response = ui.add_sized(
-        Vec2::new(135.0, 32.0),
-        egui::Button::new(RichText::new(label).color(text_color).size(13.5))
-            .fill(bg)
-            .corner_radius(6.0)
-            .stroke(if selected { Stroke::new(1.0_f32, palette::ACCENT) } else { Stroke::NONE })
-            .frame(true),
+        Vec2::new(ui.available_width(), 30.0),
+        egui::Button::new(
+            RichText::new(format!("{}   {}", icon, label))
+                .color(text_color)
+                .size(13.0)
+        )
+        .fill(bg)
+        .corner_radius(6.0)
+        .stroke(Stroke::NONE)
+        .frame(true),
     );
     if response.clicked() {
         app.ui.active_tab = tab;
@@ -580,5 +696,59 @@ mod tests {
 
         // Step 9: Identity remained strictly intact throughout
         assert_eq!(app.ui.selected_entity, Some(inspector::SelectedEntity::Object(photo_id)));
+    }
+
+    #[test]
+    fn test_exhaustive_ui_render_all_tabs_and_complexity_levels() {
+        let ctx = egui::Context::default();
+        let mut fonts = egui::FontDefinitions::default();
+        egui_phosphor::add_to_fonts(&mut fonts, egui_phosphor::Variant::Regular);
+        ctx.set_fonts(fonts);
+
+        let (mut app, _photo_id) = create_integrated_test_app();
+
+        let tabs = [
+            NavTab::Home,
+            NavTab::Family,
+            NavTab::Photos,
+            NavTab::Drive,
+            NavTab::Media,
+            NavTab::Maps,
+            NavTab::People,
+            NavTab::Devices,
+            NavTab::Network,
+            NavTab::Settings,
+        ];
+
+        let tiers = [
+            InterfaceComplexity::Simple,
+            InterfaceComplexity::Standard,
+            InterfaceComplexity::Advanced,
+            InterfaceComplexity::Expert,
+        ];
+
+        for tab in tabs {
+            for tier in tiers {
+                app.ui.active_tab = tab;
+                app.ui.complexity = tier;
+
+                let mut raw_input = egui::RawInput::default();
+                raw_input.screen_rect = Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(1080.0, 700.0),
+                ));
+
+                let full_output = ctx.run(raw_input, |ctx| {
+                    render(ctx, &mut app);
+                });
+
+                assert!(
+                    !full_output.shapes.is_empty(),
+                    "Tab {:?} under Complexity {:?} must generate valid render shapes",
+                    tab,
+                    tier
+                );
+            }
+        }
     }
 }
